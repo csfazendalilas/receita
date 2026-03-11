@@ -12,5 +12,6 @@ export type A4CalibrationByRecipe = Record<RecipeType, A4Calibration>;
 
 export const DEFAULT_A4_CALIBRATION_BY_RECIPE: A4CalibrationByRecipe = {
   A: { offsetXMm: 33, offsetYMm: 0, scale: 1 },
-  B: { offsetXMm: 36, offsetYMm: -1, scale: 1 }
+  B: { offsetXMm: 36, offsetYMm: 1, scale: 1 }
 };
+

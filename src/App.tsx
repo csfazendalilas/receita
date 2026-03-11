@@ -69,6 +69,12 @@ const DEFAULT_PREFS: Prefs = {
 function normalizePrefs(raw: unknown): Prefs {
   const obj = (raw ?? {}) as Partial<Prefs>;
   const a4 = obj.a4CalibrationByRecipe ?? DEFAULT_A4_CALIBRATION_BY_RECIPE;
+  const bOffsetX = Number(a4.B?.offsetXMm ?? DEFAULT_A4_CALIBRATION_BY_RECIPE.B.offsetXMm);
+  const bOffsetYRaw = Number(a4.B?.offsetYMm ?? DEFAULT_A4_CALIBRATION_BY_RECIPE.B.offsetYMm);
+  const bScale = Number(a4.B?.scale ?? DEFAULT_A4_CALIBRATION_BY_RECIPE.B.scale);
+  const bLooksLikeOldDefault = bOffsetX === 36 && bOffsetYRaw === -1 && bScale === 1;
+  const bOffsetY = bLooksLikeOldDefault ? DEFAULT_A4_CALIBRATION_BY_RECIPE.B.offsetYMm : bOffsetYRaw;
+
   return {
     recipeType: obj.recipeType === "A" || obj.recipeType === "B" ? obj.recipeType : DEFAULT_PREFS.recipeType,
     showTemplate: typeof obj.showTemplate === "boolean" ? obj.showTemplate : DEFAULT_PREFS.showTemplate,
@@ -80,9 +86,9 @@ function normalizePrefs(raw: unknown): Prefs {
         scale: Number(a4.A?.scale ?? DEFAULT_A4_CALIBRATION_BY_RECIPE.A.scale)
       },
       B: {
-        offsetXMm: Number(a4.B?.offsetXMm ?? DEFAULT_A4_CALIBRATION_BY_RECIPE.B.offsetXMm),
-        offsetYMm: Number(a4.B?.offsetYMm ?? DEFAULT_A4_CALIBRATION_BY_RECIPE.B.offsetYMm),
-        scale: Number(a4.B?.scale ?? DEFAULT_A4_CALIBRATION_BY_RECIPE.B.scale)
+        offsetXMm: bOffsetX,
+        offsetYMm: bOffsetY,
+        scale: bScale
       }
     }
   };
@@ -398,3 +404,4 @@ export default function App() {
     </div>
   );
 }
+

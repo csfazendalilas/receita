@@ -1,7 +1,7 @@
 const MONTHS_PT = [
   "janeiro",
   "fevereiro",
-  "marco",
+  "março",
   "abril",
   "maio",
   "junho",
@@ -30,3 +30,4 @@ export function formatDateFullPt(ddMmYyyy: string): string {
   const monthName = MONTHS_PT[parsed.month - 1];
   return `${String(parsed.day).padStart(2, "0")} de ${monthName} de ${parsed.year}`;
 }
+
