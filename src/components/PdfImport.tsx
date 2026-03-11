@@ -2,12 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import type { RecipeType } from "../lib/layout";
 import { extractFromPdf, type ExtractedMed, type ExtractedRx } from "../lib/pdfExtract";
 
-type PrefillPayload = {
+export type PrefillPayload = {
   recipeType: RecipeType;
   patient: string;
   address: string;
   dateDdMmYyyy: string;
   medication?: ExtractedMed;
+  autoPrint?: boolean;
 };
 
 type Props = {
@@ -17,13 +18,24 @@ type Props = {
 
 function inferRecipeTypeFromFileName(name: string): RecipeType | null {
   const lower = name.toLowerCase();
-  if (lower.includes("downloadb") || lower.includes("receitab") || lower.includes("notificacaob")) {
-    return "B";
-  }
-  if (lower.includes("downloada") || lower.includes("receitaa") || lower.includes("notificacaoa")) {
-    return "A";
-  }
+  if (lower.includes("downloada") || lower.includes("receitaa") || lower.includes("notificacaoa")) return "A";
+  if (lower.includes("downloadb") || lower.includes("receitab") || lower.includes("notificacaob")) return "B";
   return null;
+}
+
+function inferRecipeTypeFromExtracted(fileName: string, data: ExtractedRx, fallback: RecipeType): RecipeType {
+  const byName = inferRecipeTypeFromFileName(fileName);
+  if (byName) return byName;
+
+  const text = data.fullText.toLowerCase();
+  if (/notifica[cç][aã]o\s+de\s+receita\s+a/.test(text)) return "A";
+  if (/notifica[cç][aã]o\s+de\s+receita\s+b/.test(text)) return "B";
+
+  const med = data.meds[0];
+  if (med?.concentration?.includes("/")) return "B";
+  if (/\bfrasco\b/i.test(med?.qtyText ?? "")) return "B";
+
+  return fallback;
 }
 
 export default function PdfImport({ activeRecipeType, onPrefill }: Props) {
@@ -40,33 +52,58 @@ export default function PdfImport({ activeRecipeType, onPrefill }: Props) {
 
   const meds = useMemo(() => data?.meds ?? [], [data]);
 
-  const onParse = async () => {
+  useEffect(() => {
     if (!selectedFile) return;
 
-    setLoading(true);
-    setError("");
-    setData(null);
+    let cancelled = false;
 
-    try {
-      const extracted = await extractFromPdf(selectedFile);
-      setData(extracted);
-      setMedicationIndex(0);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Falha ao parsear PDF";
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const run = async () => {
+      setLoading(true);
+      setError("");
+      setData(null);
 
-  const applyPrefill = () => {
+      try {
+        const extracted = await extractFromPdf(selectedFile);
+        if (cancelled) return;
+
+        setData(extracted);
+        setMedicationIndex(0);
+
+        const detectedRecipeType = inferRecipeTypeFromExtracted(selectedFile.name, extracted, activeRecipeType);
+        setRecipeType(detectedRecipeType);
+
+        onPrefill({
+          recipeType: detectedRecipeType,
+          patient: extracted.patientName,
+          address: extracted.address,
+          dateDdMmYyyy: extracted.dateDdMmYyyy,
+          medication: extracted.meds[0],
+          autoPrint: true
+        });
+      } catch (err) {
+        if (cancelled) return;
+        const message = err instanceof Error ? err.message : "Falha ao parsear PDF";
+        setError(message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedFile, activeRecipeType, onPrefill]);
+
+  const applyCurrentSelection = (nextRecipeType: RecipeType, nextMedicationIndex: number) => {
     if (!data) return;
     onPrefill({
-      recipeType,
+      recipeType: nextRecipeType,
       patient: data.patientName,
       address: data.address,
       dateDdMmYyyy: data.dateDdMmYyyy,
-      medication: meds[medicationIndex]
+      medication: meds[nextMedicationIndex],
+      autoPrint: false
     });
   };
 
@@ -76,25 +113,24 @@ export default function PdfImport({ activeRecipeType, onPrefill }: Props) {
       <input
         type="file"
         accept="application/pdf"
-        onChange={(event) => {
-          const file = event.target.files?.[0] ?? null;
-          setSelectedFile(file);
-          if (file) {
-            const inferred = inferRecipeTypeFromFileName(file.name);
-            if (inferred) setRecipeType(inferred);
-          }
-        }}
+        onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
       />
-      <button type="button" onClick={onParse} disabled={!selectedFile || loading}>
-        {loading ? "Lendo PDF..." : "Extrair dados"}
-      </button>
+      <p className="print-warning">Ao escolher o arquivo, os dados sao extraidos e preenchidos automaticamente.</p>
+      {loading && <p className="print-warning">Lendo PDF...</p>}
       {error && <p className="error-msg">{error}</p>}
 
       {data && (
         <div className="import-result">
           <label>
-            Tipo de receita:
-            <select value={recipeType} onChange={(event) => setRecipeType(event.target.value as RecipeType)}>
+            Tipo de receita detectado:
+            <select
+              value={recipeType}
+              onChange={(event) => {
+                const nextRecipeType = event.target.value as RecipeType;
+                setRecipeType(nextRecipeType);
+                applyCurrentSelection(nextRecipeType, medicationIndex);
+              }}
+            >
               <option value="A">Notificacao A</option>
               <option value="B">Notificacao B</option>
             </select>
@@ -105,7 +141,11 @@ export default function PdfImport({ activeRecipeType, onPrefill }: Props) {
               Medicacao:
               <select
                 value={medicationIndex}
-                onChange={(event) => setMedicationIndex(Number(event.target.value))}
+                onChange={(event) => {
+                  const nextMedicationIndex = Number(event.target.value);
+                  setMedicationIndex(nextMedicationIndex);
+                  applyCurrentSelection(recipeType, nextMedicationIndex);
+                }}
               >
                 {meds.map((med, idx) => (
                   <option key={`${med.name}-${idx}`} value={idx}>
@@ -119,22 +159,9 @@ export default function PdfImport({ activeRecipeType, onPrefill }: Props) {
           <p><strong>Paciente:</strong> {data.patientName || "(nao encontrado)"}</p>
           <p><strong>Endereco:</strong> {data.address || "(nao encontrado)"}</p>
           <p><strong>Data:</strong> {data.dateDdMmYyyy || "(nao encontrada)"}</p>
-          {meds.length > 0 && (
-            <div className="import-result">
-              <strong>Detalhes extraidos do medicamento selecionado</strong>
-              <p><strong>Nome:</strong> {meds[medicationIndex]?.name || "-"}</p>
-              <p><strong>Quantidade:</strong> {meds[medicationIndex]?.qtyText || "-"}</p>
-              <p><strong>Forma farmaceutica:</strong> {meds[medicationIndex]?.formPharma || "-"}</p>
-              <p><strong>Concentracao:</strong> {meds[medicationIndex]?.concentration || "-"}</p>
-              <p><strong>Posologia:</strong> {meds[medicationIndex]?.posology || "-"}</p>
-            </div>
-          )}
-
-          <button type="button" onClick={applyPrefill}>
-            Prefill no formulario
-          </button>
         </div>
       )}
     </section>
   );
 }
+

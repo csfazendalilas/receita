@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import FormPanel, { type FormValues } from "./components/FormPanel";
 import PdfImport from "./components/PdfImport";
 import PreviewPaper from "./components/PreviewPaper";
@@ -237,6 +237,7 @@ export default function App() {
   const [showTemplate, setShowTemplate] = useState<boolean>(savedPrefs.showTemplate);
   const [printMode, setPrintMode] = useState<PrintMode>(savedPrefs.printMode);
   const [a4CalibrationByRecipe, setA4CalibrationByRecipe] = useState<A4CalibrationByRecipe>(savedPrefs.a4CalibrationByRecipe);
+  const [autoPrintToken, setAutoPrintToken] = useState(0);
 
   const [selectedCalFieldByRecipe, setSelectedCalFieldByRecipe] = useState<Record<RecipeType, string>>({ A: RECIPE_LAYOUT.A[0].id, B: RECIPE_LAYOUT.B[0].id });
 
@@ -259,6 +260,44 @@ export default function App() {
   const onValueChange = <K extends keyof FormValues>(key: K, value: FormValues[K]) => {
     setValues((prev) => ({ ...prev, [key]: value }));
   };
+
+  const onPrefillFromPdf = useCallback(
+    ({
+      recipeType: selectedType,
+      patient,
+      address,
+      dateDdMmYyyy,
+      medication,
+      autoPrint
+    }: {
+      recipeType: RecipeType;
+      patient: string;
+      address: string;
+      dateDdMmYyyy: string;
+      medication?: ExtractedMed;
+      autoPrint?: boolean;
+    }) => {
+      setRecipeType(selectedType);
+      setValues((prev) => ({
+        ...prev,
+        ...(selectedType === "A"
+          ? {
+              a_date: dateDdMmYyyy || prev.a_date,
+              a_patient: patient || prev.a_patient,
+              a_address: simplifyAddressStreetNumber(address || prev.a_address)
+            }
+          : {
+              b_date: dateDdMmYyyy || prev.b_date,
+              b_patient: patient || prev.b_patient,
+              b_address: simplifyAddressStreetNumber(address || prev.b_address)
+            }),
+        ...mapMedication(selectedType, medication)
+      }));
+
+      if (autoPrint) setAutoPrintToken((prev) => prev + 1);
+    },
+    []
+  );
 
   const onMoveSelectedField = (targetXMm: number, targetYMm: number) => {
     const layoutField = RECIPE_LAYOUT[recipeType].find((field) => field.id === selectedCalFieldId);
@@ -322,19 +361,7 @@ export default function App() {
   return (
     <div className="app-shell">
       <div className="left-panel">
-        <PdfImport
-          activeRecipeType={recipeType}
-          onPrefill={({ recipeType: selectedType, patient, address, dateDdMmYyyy, medication }) => {
-            setRecipeType(selectedType);
-            setValues((prev) => ({
-              ...prev,
-              ...(selectedType === "A"
-                ? { a_date: dateDdMmYyyy || prev.a_date, a_patient: patient || prev.a_patient, a_address: simplifyAddressStreetNumber(address || prev.a_address) }
-                : { b_date: dateDdMmYyyy || prev.b_date, b_patient: patient || prev.b_patient, b_address: simplifyAddressStreetNumber(address || prev.b_address) }),
-              ...mapMedication(selectedType, medication)
-            }));
-          }}
-        />
+        <PdfImport activeRecipeType={recipeType} onPrefill={onPrefillFromPdf} />
 
         <FormPanel
           recipeType={recipeType}
@@ -353,6 +380,7 @@ export default function App() {
           onA4CalibrationChange={onA4CalibrationChange}
           onResetA4Calibration={onResetA4Calibration}
           liveCoordinates={liveCoordinates}
+          autoPrintToken={autoPrintToken}
         />
       </div>
 
@@ -370,11 +398,3 @@ export default function App() {
     </div>
   );
 }
-
-
-
-
-
-
-
-

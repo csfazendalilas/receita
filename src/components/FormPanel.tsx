@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { RecipeType } from "../lib/layout";
 import type { A4Calibration, PrintMode } from "../lib/print";
 import PrintButton, { type PrintField } from "./PrintButton";
@@ -44,11 +45,13 @@ type Props = {
   onA4CalibrationChange: (key: "offsetXMm" | "offsetYMm" | "scale", value: number) => void;
   onResetA4Calibration: () => void;
   liveCoordinates: Array<{ id: string; label: string; xMm: number; yMm: number }>;
+  autoPrintToken?: number;
 };
 
 export default function FormPanel(props: Props) {
   const nudgeMm = 1;
   const nudgeScale = 0.01;
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   return (
     <div className="form-panel">
@@ -75,7 +78,7 @@ export default function FormPanel(props: Props) {
       {props.recipeType === "A" ? (
         <section className="panel-box">
           <h3>Campos da Receita A</h3>
-          <label>Data (dd/MM/aaaa)<input value={props.values.a_date} onChange={(e) => props.onValueChange("a_date", e.target.value)} /></label>
+          <label>Data<input value={props.values.a_date} onChange={(e) => props.onValueChange("a_date", e.target.value)} /></label>
           <label>Paciente<input value={props.values.a_patient} onChange={(e) => props.onValueChange("a_patient", e.target.value)} /></label>
           <label>Endereco<input value={props.values.a_address} onChange={(e) => props.onValueChange("a_address", e.target.value)} /></label>
           <label>
@@ -96,7 +99,7 @@ export default function FormPanel(props: Props) {
       ) : (
         <section className="panel-box">
           <h3>Campos da Receita B</h3>
-          <label>Data base (dd/MM/aaaa)<input value={props.values.b_date} onChange={(e) => props.onValueChange("b_date", e.target.value)} /></label>
+          <label>Data base<input value={props.values.b_date} onChange={(e) => props.onValueChange("b_date", e.target.value)} /></label>
           <label>Paciente<input value={props.values.b_patient} onChange={(e) => props.onValueChange("b_patient", e.target.value)} /></label>
           <label>Endereco<input value={props.values.b_address} onChange={(e) => props.onValueChange("b_address", e.target.value)} /></label>
           <label>
@@ -118,53 +121,66 @@ export default function FormPanel(props: Props) {
       )}
 
       <section className="panel-box">
-        <h3>Impressao</h3>
-        <label>
-          Modo de impressao
-          <select value={props.printMode} onChange={(event) => props.onPrintModeChange(event.target.value as PrintMode)}>
-            <option value="a4_auto">A4 automatico</option>
-            <option value="exact_form">Exato no tamanho do formulario</option>
-          </select>
-        </label>
-        {props.printMode === "a4_auto" && (
-          <>
-            <p className="print-warning">Use as setas para mover a area de impressao no A4.</p>
-            <div className="nudge-pad">
-              <button type="button" onClick={() => props.onA4CalibrationChange("offsetYMm", props.a4Calibration.offsetYMm - nudgeMm)}>?</button>
-              <button type="button" onClick={() => props.onA4CalibrationChange("offsetXMm", props.a4Calibration.offsetXMm - nudgeMm)}>?</button>
-              <button type="button" onClick={() => props.onA4CalibrationChange("offsetXMm", props.a4Calibration.offsetXMm + nudgeMm)}>?</button>
-              <button type="button" onClick={() => props.onA4CalibrationChange("offsetYMm", props.a4Calibration.offsetYMm + nudgeMm)}>?</button>
-            </div>
-            <div className="scale-row">
-              <button type="button" onClick={() => props.onA4CalibrationChange("scale", Math.max(0.8, Number((props.a4Calibration.scale - nudgeScale).toFixed(3))))}>Escala -</button>
-              <button type="button" onClick={() => props.onA4CalibrationChange("scale", Number((props.a4Calibration.scale + nudgeScale).toFixed(3)))}>Escala +</button>
-            </div>
-            <p className="print-warning">
-              Ajuste atual: X {props.a4Calibration.offsetXMm.toFixed(1)}mm, Y {props.a4Calibration.offsetYMm.toFixed(1)}mm, Escala {props.a4Calibration.scale.toFixed(3)}
-            </p>
-            <button type="button" onClick={props.onResetA4Calibration}>Resetar ajuste A4</button>
-          </>
-        )}
+        <button type="button" onClick={() => setShowAdvanced((prev) => !prev)}>
+          {showAdvanced ? "Ocultar avancado" : "Avancado"}
+        </button>
       </section>
 
-      <section className="panel-box">
-        <h3>Coordenadas Ao Vivo (mm)</h3>
-        <p className="print-warning">Arraste os campos no preview. Estes valores atualizam em tempo real.</p>
-        <div className="coords-list">
-          {props.liveCoordinates.map((coord) => (
-            <div key={coord.id} className="coords-row">
-              <strong>{coord.label}</strong>
-              <span>X: {coord.xMm.toFixed(1)} | Y: {coord.yMm.toFixed(1)}</span>
+      {showAdvanced && (
+        <>
+          <section className="panel-box">
+            <h3>Impressao</h3>
+            <label>
+              Modo de impressao
+              <select value={props.printMode} onChange={(event) => props.onPrintModeChange(event.target.value as PrintMode)}>
+                <option value="a4_auto">A4 automatico</option>
+                <option value="exact_form">Exato no tamanho do formulario</option>
+              </select>
+            </label>
+            {props.printMode === "a4_auto" && (
+              <>
+                <p className="print-warning">Use as setas para mover a area de impressao no A4.</p>
+                <div className="nudge-pad">
+                  <button type="button" onClick={() => props.onA4CalibrationChange("offsetYMm", props.a4Calibration.offsetYMm - nudgeMm)}>Cima</button>
+                  <button type="button" onClick={() => props.onA4CalibrationChange("offsetXMm", props.a4Calibration.offsetXMm - nudgeMm)}>Esquerda</button>
+                  <button type="button" onClick={() => props.onA4CalibrationChange("offsetXMm", props.a4Calibration.offsetXMm + nudgeMm)}>Direita</button>
+                  <button type="button" onClick={() => props.onA4CalibrationChange("offsetYMm", props.a4Calibration.offsetYMm + nudgeMm)}>Baixo</button>
+                </div>
+                <div className="scale-row">
+                  <button type="button" onClick={() => props.onA4CalibrationChange("scale", Math.max(0.8, Number((props.a4Calibration.scale - nudgeScale).toFixed(3))))}>Escala -</button>
+                  <button type="button" onClick={() => props.onA4CalibrationChange("scale", Number((props.a4Calibration.scale + nudgeScale).toFixed(3)))}>Escala +</button>
+                </div>
+                <p className="print-warning">
+                  Ajuste atual: X {props.a4Calibration.offsetXMm.toFixed(1)}mm, Y {props.a4Calibration.offsetYMm.toFixed(1)}mm, Escala {props.a4Calibration.scale.toFixed(3)}
+                </p>
+                <button type="button" onClick={props.onResetA4Calibration}>Resetar ajuste A4</button>
+              </>
+            )}
+          </section>
+
+          <section className="panel-box">
+            <h3>Coordenadas Ao Vivo (mm)</h3>
+            <p className="print-warning">Arraste os campos no preview. Estes valores atualizam em tempo real.</p>
+            <div className="coords-list">
+              {props.liveCoordinates.map((coord) => (
+                <div key={coord.id} className="coords-row">
+                  <strong>{coord.label}</strong>
+                  <span>X: {coord.xMm.toFixed(1)} | Y: {coord.yMm.toFixed(1)}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </section>
+            <button type="button" onClick={props.onResetCalibration}>Resetar calibracao</button>
+          </section>
+        </>
+      )}
 
-      <section className="panel-box">
-        <button type="button" onClick={props.onResetCalibration}>Resetar calibracao</button>
-      </section>
-
-      <PrintButton recipeType={props.recipeType} fields={props.printFields} printMode={props.printMode} a4Calibration={props.a4Calibration} />
+      <PrintButton
+        recipeType={props.recipeType}
+        fields={props.printFields}
+        printMode={props.printMode}
+        a4Calibration={props.a4Calibration}
+        autoPrintToken={props.autoPrintToken}
+      />
 
       <section className="panel-box">
         <button type="button" className="danger-btn" onClick={props.onClearAll}>Clear all data</button>
