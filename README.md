@@ -37,7 +37,7 @@ Cobertura atual:
 ## Uso rapido
 1. Escolha o tipo de receita A ou B.
 2. Preencha manualmente os campos no painel esquerdo.
-3. Opcional: importe um PDF (`download.pdf`) e use "Prefill no formulario".
+3. Opcional: importe um PDF pelo seletor de arquivo. Exemplos ficticios versionados em `samples/downloada.pdf` e `samples/downloadb.pdf` (nao coloque PDFs com dados reais em `public/`).
 4. Ajuste a calibracao global e por campo se necessario.
 5. Revise no preview (com template ON/OFF).
 6. Clique em "Imprimir Receita".
@@ -72,9 +72,8 @@ Cobertura atual:
   - permite override manual
 
 ## Assets locais
-- `public/A.jpg`
-- `public/B.jpg`
-- `public/download.pdf`
+- `public/A.png` e `public/B.png` — templates vazios para o preview (servidos na URL publica do deploy).
+- `samples/downloada.pdf` e `samples/downloadb.pdf` — exemplos **ficticios** para testar a extracao e o prefill; **nao** sao servidos pelo Vite (use o seletor de ficheiro na app). Os nomes ajudam a detetar automaticamente o tipo A ou B.
 
 ## Persistencia localStorage
 - calibracao

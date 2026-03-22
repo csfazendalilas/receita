@@ -18,8 +18,8 @@ export type PaperConfig = {
 };
 
 export const PAPER_CONFIG: Record<RecipeType, PaperConfig> = {
-  A: { widthMm: 219, heightMm: 100, templateImage: "/A.jpg" },
-  B: { widthMm: 212, heightMm: 96, templateImage: "/B.jpg" }
+  A: { widthMm: 219, heightMm: 100, templateImage: "/A.png" },
+  B: { widthMm: 212, heightMm: 96, templateImage: "/B.png" }
 };
 
 export const RECIPE_A_LAYOUT: FieldLayout[] = [
