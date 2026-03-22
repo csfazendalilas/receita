@@ -17,9 +17,16 @@ export type PaperConfig = {
   templateImage: string;
 };
 
+/** Public dir assets must use Vite base (ex.: /receita/ no GitHub Pages). */
+function publicUrl(fileName: string): string {
+  const base = import.meta.env.BASE_URL;
+  const name = fileName.replace(/^\//, "");
+  return `${base}${name}`;
+}
+
 export const PAPER_CONFIG: Record<RecipeType, PaperConfig> = {
-  A: { widthMm: 219, heightMm: 100, templateImage: "/A.png" },
-  B: { widthMm: 212, heightMm: 96, templateImage: "/B.png" }
+  A: { widthMm: 219, heightMm: 100, templateImage: publicUrl("A.png") },
+  B: { widthMm: 212, heightMm: 96, templateImage: publicUrl("B.png") }
 };
 
 export const RECIPE_A_LAYOUT: FieldLayout[] = [
