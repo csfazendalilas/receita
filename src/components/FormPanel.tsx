@@ -37,6 +37,7 @@ type Props = {
   onValueChange: <K extends keyof FormValues>(key: K, value: FormValues[K]) => void;
   onResetCalibration: () => void;
   onClearAll: () => void;
+  onSaveSettings: () => void;
   printFields: PrintField[];
   addressInfo: AddressInfo;
   printMode: PrintMode;
@@ -46,6 +47,7 @@ type Props = {
   onResetA4Calibration: () => void;
   liveCoordinates: Array<{ id: string; label: string; xMm: number; yMm: number }>;
   autoPrintToken?: number;
+  lastSavedAt?: number;
 };
 
 export default function FormPanel(props: Props) {
@@ -128,6 +130,12 @@ export default function FormPanel(props: Props) {
 
       {showAdvanced && (
         <>
+          <section className="panel-box">
+            <h3>Configuracoes</h3>
+            <button type="button" onClick={props.onSaveSettings}>Salvar configuracoes</button>
+            {props.lastSavedAt ? <p className="ok-msg">Salvo.</p> : null}
+          </section>
+
           <section className="panel-box">
             <h3>Impressao</h3>
             <label>

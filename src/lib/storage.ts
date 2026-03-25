@@ -45,8 +45,18 @@ export function defaultCalibration(): CalibrationState {
         RECIPE_LAYOUT.B.map((field) => [
           field.id,
           {
-            xOffsetMm: 0,
-            yOffsetMm: 0,
+            xOffsetMm:
+              field.id === "patient"
+                ? 0.3
+                : field.id === "address"
+                  ? 1.8
+                  : 0,
+            yOffsetMm:
+              field.id === "patient"
+                ? 1.9
+                : field.id === "address"
+                  ? 1.3
+                  : 0,
             fontSizePt: field.defaultFontPt,
             minFontPt: field.minFontPt,
             letterSpacingPt: field.defaultLetterSpacingPt

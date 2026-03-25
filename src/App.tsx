@@ -244,6 +244,7 @@ export default function App() {
   const [printMode, setPrintMode] = useState<PrintMode>(savedPrefs.printMode);
   const [a4CalibrationByRecipe, setA4CalibrationByRecipe] = useState<A4CalibrationByRecipe>(savedPrefs.a4CalibrationByRecipe);
   const [autoPrintToken, setAutoPrintToken] = useState(0);
+  const [lastSavedAt, setLastSavedAt] = useState<number | undefined>(undefined);
 
   const [selectedCalFieldByRecipe, setSelectedCalFieldByRecipe] = useState<Record<RecipeType, string>>({ A: RECIPE_LAYOUT.A[0].id, B: RECIPE_LAYOUT.B[0].id });
 
@@ -362,7 +363,15 @@ export default function App() {
     setPrintMode(DEFAULT_PREFS.printMode);
     setA4CalibrationByRecipe(DEFAULT_A4_CALIBRATION_BY_RECIPE);
     setSelectedCalFieldByRecipe({ A: RECIPE_LAYOUT.A[0].id, B: RECIPE_LAYOUT.B[0].id });
+    setLastSavedAt(undefined);
   };
+
+  const onSaveSettings = useCallback(() => {
+    saveValues(values);
+    saveCalibration(calibration);
+    savePrefs({ recipeType, showTemplate, printMode, a4CalibrationByRecipe });
+    setLastSavedAt(Date.now());
+  }, [a4CalibrationByRecipe, calibration, printMode, recipeType, showTemplate, values]);
 
   return (
     <div className="app-shell">
@@ -378,6 +387,7 @@ export default function App() {
           onValueChange={onValueChange}
           onResetCalibration={onResetCalibration}
           onClearAll={onClearAll}
+          onSaveSettings={onSaveSettings}
           printFields={preview.fields}
           addressInfo={preview.addressInfo}
           printMode={printMode}
@@ -387,6 +397,7 @@ export default function App() {
           onResetA4Calibration={onResetA4Calibration}
           liveCoordinates={liveCoordinates}
           autoPrintToken={autoPrintToken}
+          lastSavedAt={lastSavedAt}
         />
       </div>
 
