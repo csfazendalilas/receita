@@ -5,6 +5,8 @@ import type { PrintField } from "./PrintButton";
 type Props = {
   recipeType: RecipeType;
   showTemplate: boolean;
+  templateOffset: { xMm: number; yMm: number };
+  onTemplateOffsetChange: (key: "xMm" | "yMm", value: number) => void;
   fields: PrintField[];
   selectedFieldId: string;
   onSelectField: (fieldId: string) => void;
@@ -19,9 +21,19 @@ type DragState = {
   startYMm: number;
 };
 
+type TemplateDragState = {
+  pointerId: number;
+  startClientX: number;
+  startClientY: number;
+  startTemplateXMm: number;
+  startTemplateYMm: number;
+};
+
 export default function PreviewPaper({
   recipeType,
   showTemplate,
+  templateOffset,
+  onTemplateOffsetChange,
   fields,
   selectedFieldId,
   onSelectField,
@@ -30,6 +42,7 @@ export default function PreviewPaper({
   const paper = PAPER_CONFIG[recipeType];
   const paperRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
+  const templateDragRef = useRef<TemplateDragState | null>(null);
 
   const selectedField = fields.find((field) => field.id === selectedFieldId) ?? fields[0];
 
@@ -53,6 +66,13 @@ export default function PreviewPaper({
   };
 
   const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (templateDragRef.current && templateDragRef.current.pointerId === event.pointerId) {
+      const dxMm = toMm(event.clientX - templateDragRef.current.startClientX, "x");
+      const dyMm = toMm(event.clientY - templateDragRef.current.startClientY, "y");
+      onTemplateOffsetChange("xMm", templateDragRef.current.startTemplateXMm + dxMm);
+      onTemplateOffsetChange("yMm", templateDragRef.current.startTemplateYMm + dyMm);
+      return;
+    }
     if (!dragRef.current || dragRef.current.pointerId !== event.pointerId) return;
 
     const dxMm = toMm(event.clientX - dragRef.current.startClientX, "x");
@@ -62,13 +82,31 @@ export default function PreviewPaper({
   };
 
   const onPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    if (templateDragRef.current?.pointerId === event.pointerId) {
+      templateDragRef.current = null;
+    }
     if (dragRef.current?.pointerId === event.pointerId) {
       dragRef.current = null;
     }
   };
 
+  const onPaperPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return;
+    if (!event.altKey) return;
+
+    templateDragRef.current = {
+      pointerId: event.pointerId,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startTemplateXMm: templateOffset.xMm,
+      startTemplateYMm: templateOffset.yMm
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
   const onPaperClick = (event: MouseEvent<HTMLDivElement>) => {
     if (event.target !== event.currentTarget) return;
+    if (event.altKey) return;
     if (!selectedField) return;
 
     const rect = event.currentTarget.getBoundingClientRect();
@@ -86,9 +124,11 @@ export default function PreviewPaper({
         style={{
           width: `${paper.widthMm}mm`,
           height: `${paper.heightMm}mm`,
-          backgroundImage: showTemplate ? `url(${paper.templateImage})` : "none"
+          backgroundImage: showTemplate ? `url(${paper.templateImage})` : "none",
+          backgroundPosition: `${templateOffset.xMm}mm ${templateOffset.yMm}mm`
         }}
         onClick={onPaperClick}
+        onPointerDown={onPaperPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}

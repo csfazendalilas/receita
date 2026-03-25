@@ -45,6 +45,9 @@ type Props = {
   a4Calibration: A4Calibration;
   onA4CalibrationChange: (key: "offsetXMm" | "offsetYMm" | "scale", value: number) => void;
   onResetA4Calibration: () => void;
+  templateOffset: { xMm: number; yMm: number };
+  onTemplateOffsetChange: (key: "xMm" | "yMm", value: number) => void;
+  onResetTemplateOffset: () => void;
   liveCoordinates: Array<{ id: string; label: string; xMm: number; yMm: number }>;
   autoPrintToken?: number;
   lastSavedAt?: number;
@@ -134,6 +137,21 @@ export default function FormPanel(props: Props) {
             <h3>Configuracoes</h3>
             <button type="button" onClick={props.onSaveSettings}>Salvar configuracoes</button>
             {props.lastSavedAt ? <p className="ok-msg">Salvo.</p> : null}
+          </section>
+
+          <section className="panel-box">
+            <h3>Template (imagem de fundo)</h3>
+            <p className="print-warning">Dica: no preview, segure ALT e arraste para mover o fundo.</p>
+            <div className="nudge-pad">
+              <button type="button" onClick={() => props.onTemplateOffsetChange("yMm", props.templateOffset.yMm - nudgeMm)}>Cima</button>
+              <button type="button" onClick={() => props.onTemplateOffsetChange("xMm", props.templateOffset.xMm - nudgeMm)}>Esquerda</button>
+              <button type="button" onClick={() => props.onTemplateOffsetChange("xMm", props.templateOffset.xMm + nudgeMm)}>Direita</button>
+              <button type="button" onClick={() => props.onTemplateOffsetChange("yMm", props.templateOffset.yMm + nudgeMm)}>Baixo</button>
+            </div>
+            <p className="print-warning">
+              Offset do template: X {props.templateOffset.xMm.toFixed(1)}mm, Y {props.templateOffset.yMm.toFixed(1)}mm
+            </p>
+            <button type="button" onClick={props.onResetTemplateOffset}>Resetar template</button>
           </section>
 
           <section className="panel-box">
