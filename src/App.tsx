@@ -283,6 +283,7 @@ export default function App() {
   const onPrefillFromPdf = useCallback(
     ({
       recipeType: selectedType,
+      applyRecipeType = true,
       patient,
       address,
       dateDdMmYyyy,
@@ -290,13 +291,14 @@ export default function App() {
       autoPrint
     }: {
       recipeType: RecipeType;
+      applyRecipeType?: boolean;
       patient: string;
       address: string;
       dateDdMmYyyy: string;
       medication?: ExtractedMed;
       autoPrint?: boolean;
     }) => {
-      setRecipeType(selectedType);
+      if (applyRecipeType) setRecipeType(selectedType);
       setValues((prev) => ({
         ...prev,
         ...(selectedType === "A"

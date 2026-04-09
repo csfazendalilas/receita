@@ -4,6 +4,7 @@ import { extractFromPdf, type ExtractedMed, type ExtractedRx } from "../lib/pdfE
 
 export type PrefillPayload = {
   recipeType: RecipeType;
+  applyRecipeType?: boolean;
   patient: string;
   address: string;
   dateDdMmYyyy: string;
@@ -43,6 +44,7 @@ export default function PdfImport({ activeRecipeType, onPrefill }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [data, setData] = useState<ExtractedRx | null>(null);
+  const [applyDetectedRecipeType, setApplyDetectedRecipeType] = useState(true);
   const [recipeType, setRecipeType] = useState<RecipeType>(activeRecipeType);
   const [medicationIndex, setMedicationIndex] = useState(0);
 
@@ -70,10 +72,12 @@ export default function PdfImport({ activeRecipeType, onPrefill }: Props) {
         setMedicationIndex(0);
 
         const detectedRecipeType = inferRecipeTypeFromExtracted(selectedFile.name, extracted, activeRecipeType);
-        setRecipeType(detectedRecipeType);
+        const selectedRecipeType = applyDetectedRecipeType ? detectedRecipeType : activeRecipeType;
+        setRecipeType(selectedRecipeType);
 
         onPrefill({
-          recipeType: detectedRecipeType,
+          recipeType: selectedRecipeType,
+          applyRecipeType: applyDetectedRecipeType,
           patient: extracted.patientName,
           address: extracted.address,
           dateDdMmYyyy: extracted.dateDdMmYyyy,
@@ -93,12 +97,13 @@ export default function PdfImport({ activeRecipeType, onPrefill }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [selectedFile, activeRecipeType, onPrefill]);
+  }, [selectedFile, activeRecipeType, applyDetectedRecipeType, onPrefill]);
 
   const applyCurrentSelection = (nextRecipeType: RecipeType, nextMedicationIndex: number) => {
     if (!data) return;
     onPrefill({
       recipeType: nextRecipeType,
+      applyRecipeType: true,
       patient: data.patientName,
       address: data.address,
       dateDdMmYyyy: data.dateDdMmYyyy,
@@ -116,6 +121,14 @@ export default function PdfImport({ activeRecipeType, onPrefill }: Props) {
         onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
       />
       <p className="print-warning">Ao escolher o arquivo, os dados sao extraidos e preenchidos automaticamente.</p>
+      <label className="checkbox">
+        <input
+          type="checkbox"
+          checked={applyDetectedRecipeType}
+          onChange={(event) => setApplyDetectedRecipeType(event.target.checked)}
+        />
+        Trocar automaticamente para o tipo detectado no PDF
+      </label>
       {loading && <p className="print-warning">Lendo PDF...</p>}
       {error && <p className="error-msg">{error}</p>}
 
