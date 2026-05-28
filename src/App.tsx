@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import FormPanel, { type FormValues } from "./components/FormPanel";
 import PdfImport from "./components/PdfImport";
 import PreviewPaper from "./components/PreviewPaper";
@@ -8,6 +8,7 @@ import { formatDateFullPt } from "./lib/datePt";
 import { RECIPE_LAYOUT, type FieldLayout, type RecipeType } from "./lib/layout";
 import {
   DEFAULT_A4_CALIBRATION_BY_RECIPE,
+  type A4Calibration,
   type A4CalibrationByRecipe,
   type PrintMode
 } from "./lib/print";
@@ -27,8 +28,8 @@ import type { ExtractedMed } from "./lib/pdfExtract";
 
 type Prefs = {
   recipeType: RecipeType;
-  showTemplate: boolean;
-  printMode: PrintMode;
+  showTemplateByRecipe: Record<RecipeType, boolean>;
+  printModeByRecipe: Record<RecipeType, PrintMode>;
   a4CalibrationByRecipe: A4CalibrationByRecipe;
   templateOffsetByRecipe: Record<RecipeType, { xMm: number; yMm: number }>;
 };
@@ -62,33 +63,50 @@ const DEFAULT_VALUES: FormValues = {
 
 const DEFAULT_PREFS: Prefs = {
   recipeType: "B",
-  showTemplate: true,
-  printMode: "a4_auto",
+  showTemplateByRecipe: { A: true, B: true },
+  printModeByRecipe: { A: "a4_auto", B: "a4_auto" },
   a4CalibrationByRecipe: DEFAULT_A4_CALIBRATION_BY_RECIPE,
   templateOffsetByRecipe: { A: { xMm: 0, yMm: 0 }, B: { xMm: 0, yMm: 0 } }
 };
 
 function normalizePrefs(raw: unknown): Prefs {
-  const obj = (raw ?? {}) as Partial<Prefs>;
-  const a4 = obj.a4CalibrationByRecipe ?? DEFAULT_A4_CALIBRATION_BY_RECIPE;
+  const obj = (raw ?? {}) as Record<string, unknown>;
+  const a4 = (obj.a4CalibrationByRecipe ?? DEFAULT_A4_CALIBRATION_BY_RECIPE) as Partial<A4CalibrationByRecipe>;
   const templateOffset = (obj.templateOffsetByRecipe ?? DEFAULT_PREFS.templateOffsetByRecipe) as Partial<
     Record<RecipeType, { xMm?: unknown; yMm?: unknown }>
   >;
-  const bOffsetX = Number(a4.B?.offsetXMm ?? DEFAULT_A4_CALIBRATION_BY_RECIPE.B.offsetXMm);
-  const bOffsetYRaw = Number(a4.B?.offsetYMm ?? DEFAULT_A4_CALIBRATION_BY_RECIPE.B.offsetYMm);
-  const bScale = Number(a4.B?.scale ?? DEFAULT_A4_CALIBRATION_BY_RECIPE.B.scale);
+  const bOffsetX = Number((a4.B as A4Calibration | undefined)?.offsetXMm ?? DEFAULT_A4_CALIBRATION_BY_RECIPE.B.offsetXMm);
+  const bOffsetYRaw = Number((a4.B as A4Calibration | undefined)?.offsetYMm ?? DEFAULT_A4_CALIBRATION_BY_RECIPE.B.offsetYMm);
+  const bScale = Number((a4.B as A4Calibration | undefined)?.scale ?? DEFAULT_A4_CALIBRATION_BY_RECIPE.B.scale);
   const bLooksLikeOldDefault = bOffsetX === 36 && bOffsetYRaw === -1 && bScale === 1;
   const bOffsetY = bLooksLikeOldDefault ? DEFAULT_A4_CALIBRATION_BY_RECIPE.B.offsetYMm : bOffsetYRaw;
 
+  // Migrate old single showTemplate boolean → per-recipe object
+  const rawShowByRecipe = obj.showTemplateByRecipe as Partial<Record<RecipeType, unknown>> | undefined;
+  const oldShowTemplate = typeof obj.showTemplate === "boolean" ? obj.showTemplate : DEFAULT_PREFS.showTemplateByRecipe.A;
+  const showTemplateByRecipe: Record<RecipeType, boolean> = {
+    A: typeof rawShowByRecipe?.A === "boolean" ? rawShowByRecipe.A : oldShowTemplate,
+    B: typeof rawShowByRecipe?.B === "boolean" ? rawShowByRecipe.B : oldShowTemplate
+  };
+
+  // Migrate old single printMode string → per-recipe object
+  const rawModeByRecipe = obj.printModeByRecipe as Partial<Record<RecipeType, unknown>> | undefined;
+  const oldPrintMode: PrintMode =
+    obj.printMode === "exact_form" || obj.printMode === "a4_auto" ? (obj.printMode as PrintMode) : DEFAULT_PREFS.printModeByRecipe.A;
+  const printModeByRecipe: Record<RecipeType, PrintMode> = {
+    A: rawModeByRecipe?.A === "exact_form" || rawModeByRecipe?.A === "a4_auto" ? (rawModeByRecipe.A as PrintMode) : oldPrintMode,
+    B: rawModeByRecipe?.B === "exact_form" || rawModeByRecipe?.B === "a4_auto" ? (rawModeByRecipe.B as PrintMode) : oldPrintMode
+  };
+
   return {
-    recipeType: obj.recipeType === "A" || obj.recipeType === "B" ? obj.recipeType : DEFAULT_PREFS.recipeType,
-    showTemplate: typeof obj.showTemplate === "boolean" ? obj.showTemplate : DEFAULT_PREFS.showTemplate,
-    printMode: obj.printMode === "exact_form" || obj.printMode === "a4_auto" ? obj.printMode : DEFAULT_PREFS.printMode,
+    recipeType: obj.recipeType === "A" || obj.recipeType === "B" ? (obj.recipeType as RecipeType) : DEFAULT_PREFS.recipeType,
+    showTemplateByRecipe,
+    printModeByRecipe,
     a4CalibrationByRecipe: {
       A: {
-        offsetXMm: Number(a4.A?.offsetXMm ?? DEFAULT_A4_CALIBRATION_BY_RECIPE.A.offsetXMm),
-        offsetYMm: Number(a4.A?.offsetYMm ?? DEFAULT_A4_CALIBRATION_BY_RECIPE.A.offsetYMm),
-        scale: Number(a4.A?.scale ?? DEFAULT_A4_CALIBRATION_BY_RECIPE.A.scale)
+        offsetXMm: Number((a4.A as A4Calibration | undefined)?.offsetXMm ?? DEFAULT_A4_CALIBRATION_BY_RECIPE.A.offsetXMm),
+        offsetYMm: Number((a4.A as A4Calibration | undefined)?.offsetYMm ?? DEFAULT_A4_CALIBRATION_BY_RECIPE.A.offsetYMm),
+        scale: Number((a4.A as A4Calibration | undefined)?.scale ?? DEFAULT_A4_CALIBRATION_BY_RECIPE.A.scale)
       },
       B: {
         offsetXMm: bOffsetX,
@@ -255,12 +273,18 @@ export default function App() {
   const [values, setValues] = useState<FormValues>(() => loadValues<FormValues>(DEFAULT_VALUES));
   const [calibration, setCalibration] = useState<CalibrationState>(() => loadCalibration());
   const [recipeType, setRecipeType] = useState<RecipeType>(savedPrefs.recipeType);
-  const [showTemplate, setShowTemplate] = useState<boolean>(savedPrefs.showTemplate);
-  const [printMode, setPrintMode] = useState<PrintMode>(savedPrefs.printMode);
+  const [showTemplateByRecipe, setShowTemplateByRecipe] = useState<Record<RecipeType, boolean>>(savedPrefs.showTemplateByRecipe);
+  const [printModeByRecipe, setPrintModeByRecipe] = useState<Record<RecipeType, PrintMode>>(savedPrefs.printModeByRecipe);
   const [a4CalibrationByRecipe, setA4CalibrationByRecipe] = useState<A4CalibrationByRecipe>(savedPrefs.a4CalibrationByRecipe);
   const [templateOffsetByRecipe, setTemplateOffsetByRecipe] = useState<Prefs["templateOffsetByRecipe"]>(savedPrefs.templateOffsetByRecipe);
   const [autoPrintToken, setAutoPrintToken] = useState(0);
   const [lastSavedAt, setLastSavedAt] = useState<number | undefined>(undefined);
+
+  // Auto-save prefs (tipo de receita, template, modo de impressão, calibrações A4/template)
+  // sempre que qualquer uma dessas preferências mudar — separadas por receita.
+  useEffect(() => {
+    savePrefs({ recipeType, showTemplateByRecipe, printModeByRecipe, a4CalibrationByRecipe, templateOffsetByRecipe });
+  }, [recipeType, showTemplateByRecipe, printModeByRecipe, a4CalibrationByRecipe, templateOffsetByRecipe]);
 
   const [selectedCalFieldByRecipe, setSelectedCalFieldByRecipe] = useState<Record<RecipeType, string>>({ A: RECIPE_LAYOUT.A[0].id, B: RECIPE_LAYOUT.B[0].id });
 
@@ -390,8 +414,8 @@ export default function App() {
     setValues(DEFAULT_VALUES);
     setCalibration(defaultCalibration());
     setRecipeType(DEFAULT_PREFS.recipeType);
-    setShowTemplate(DEFAULT_PREFS.showTemplate);
-    setPrintMode(DEFAULT_PREFS.printMode);
+    setShowTemplateByRecipe(DEFAULT_PREFS.showTemplateByRecipe);
+    setPrintModeByRecipe(DEFAULT_PREFS.printModeByRecipe);
     setA4CalibrationByRecipe(DEFAULT_A4_CALIBRATION_BY_RECIPE);
     setTemplateOffsetByRecipe(DEFAULT_PREFS.templateOffsetByRecipe);
     setSelectedCalFieldByRecipe({ A: RECIPE_LAYOUT.A[0].id, B: RECIPE_LAYOUT.B[0].id });
@@ -401,9 +425,9 @@ export default function App() {
   const onSaveSettings = useCallback(() => {
     saveValues(values);
     saveCalibration(calibration);
-    savePrefs({ recipeType, showTemplate, printMode, a4CalibrationByRecipe, templateOffsetByRecipe });
+    savePrefs({ recipeType, showTemplateByRecipe, printModeByRecipe, a4CalibrationByRecipe, templateOffsetByRecipe });
     setLastSavedAt(Date.now());
-  }, [a4CalibrationByRecipe, calibration, printMode, recipeType, showTemplate, templateOffsetByRecipe, values]);
+  }, [a4CalibrationByRecipe, calibration, printModeByRecipe, recipeType, showTemplateByRecipe, templateOffsetByRecipe, values]);
 
   return (
     <div className="app-shell">
@@ -413,8 +437,8 @@ export default function App() {
         <FormPanel
           recipeType={recipeType}
           setRecipeType={setRecipeType}
-          showTemplate={showTemplate}
-          setShowTemplate={setShowTemplate}
+          showTemplate={showTemplateByRecipe[recipeType]}
+          setShowTemplate={(value) => setShowTemplateByRecipe((prev) => ({ ...prev, [recipeType]: value }))}
           values={values}
           onValueChange={onValueChange}
           onResetCalibration={onResetCalibration}
@@ -422,8 +446,8 @@ export default function App() {
           onSaveSettings={onSaveSettings}
           printFields={preview.fields}
           addressInfo={preview.addressInfo}
-          printMode={printMode}
-          onPrintModeChange={setPrintMode}
+          printMode={printModeByRecipe[recipeType]}
+          onPrintModeChange={(mode) => setPrintModeByRecipe((prev) => ({ ...prev, [recipeType]: mode }))}
           a4Calibration={a4CalibrationByRecipe[recipeType]}
           onA4CalibrationChange={onA4CalibrationChange}
           onResetA4Calibration={onResetA4Calibration}
@@ -440,7 +464,7 @@ export default function App() {
         <h2>Preview ao vivo</h2>
         <PreviewPaper
           recipeType={recipeType}
-          showTemplate={showTemplate}
+          showTemplate={showTemplateByRecipe[recipeType]}
           templateOffset={templateOffsetByRecipe[recipeType]}
           onTemplateOffsetChange={onTemplateOffsetChange}
           fields={preview.fields}
