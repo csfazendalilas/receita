@@ -32,6 +32,7 @@ type Prefs = {
   printModeByRecipe: Record<RecipeType, PrintMode>;
   a4CalibrationByRecipe: A4CalibrationByRecipe;
   templateOffsetByRecipe: Record<RecipeType, { xMm: number; yMm: number }>;
+  templateRotationByRecipe: Record<RecipeType, number>;
 };
 
 const UNIFORM_A_FONT_PT = 9;
@@ -66,7 +67,8 @@ const DEFAULT_PREFS: Prefs = {
   showTemplateByRecipe: { A: true, B: true },
   printModeByRecipe: { A: "a4_auto", B: "a4_auto" },
   a4CalibrationByRecipe: DEFAULT_A4_CALIBRATION_BY_RECIPE,
-  templateOffsetByRecipe: { A: { xMm: 0, yMm: 0 }, B: { xMm: 0, yMm: 0 } }
+  templateOffsetByRecipe: { A: { xMm: 0, yMm: 0 }, B: { xMm: 0, yMm: 0 } },
+  templateRotationByRecipe: { A: 0, B: 0 }
 };
 
 function normalizePrefs(raw: unknown): Prefs {
@@ -98,10 +100,17 @@ function normalizePrefs(raw: unknown): Prefs {
     B: rawModeByRecipe?.B === "exact_form" || rawModeByRecipe?.B === "a4_auto" ? (rawModeByRecipe.B as PrintMode) : oldPrintMode
   };
 
+  const rawRotByRecipe = obj.templateRotationByRecipe as Partial<Record<RecipeType, unknown>> | undefined;
+  const templateRotationByRecipe: Record<RecipeType, number> = {
+    A: typeof rawRotByRecipe?.A === "number" ? rawRotByRecipe.A : DEFAULT_PREFS.templateRotationByRecipe.A,
+    B: typeof rawRotByRecipe?.B === "number" ? rawRotByRecipe.B : DEFAULT_PREFS.templateRotationByRecipe.B
+  };
+
   return {
     recipeType: obj.recipeType === "A" || obj.recipeType === "B" ? (obj.recipeType as RecipeType) : DEFAULT_PREFS.recipeType,
     showTemplateByRecipe,
     printModeByRecipe,
+    templateRotationByRecipe,
     a4CalibrationByRecipe: {
       A: {
         offsetXMm: Number((a4.A as A4Calibration | undefined)?.offsetXMm ?? DEFAULT_A4_CALIBRATION_BY_RECIPE.A.offsetXMm),
@@ -277,14 +286,15 @@ export default function App() {
   const [printModeByRecipe, setPrintModeByRecipe] = useState<Record<RecipeType, PrintMode>>(savedPrefs.printModeByRecipe);
   const [a4CalibrationByRecipe, setA4CalibrationByRecipe] = useState<A4CalibrationByRecipe>(savedPrefs.a4CalibrationByRecipe);
   const [templateOffsetByRecipe, setTemplateOffsetByRecipe] = useState<Prefs["templateOffsetByRecipe"]>(savedPrefs.templateOffsetByRecipe);
+  const [templateRotationByRecipe, setTemplateRotationByRecipe] = useState<Record<RecipeType, number>>(savedPrefs.templateRotationByRecipe);
   const [autoPrintToken, setAutoPrintToken] = useState(0);
   const [lastSavedAt, setLastSavedAt] = useState<number | undefined>(undefined);
 
   // Auto-save prefs (tipo de receita, template, modo de impressão, calibrações A4/template)
   // sempre que qualquer uma dessas preferências mudar — separadas por receita.
   useEffect(() => {
-    savePrefs({ recipeType, showTemplateByRecipe, printModeByRecipe, a4CalibrationByRecipe, templateOffsetByRecipe });
-  }, [recipeType, showTemplateByRecipe, printModeByRecipe, a4CalibrationByRecipe, templateOffsetByRecipe]);
+    savePrefs({ recipeType, showTemplateByRecipe, printModeByRecipe, a4CalibrationByRecipe, templateOffsetByRecipe, templateRotationByRecipe });
+  }, [recipeType, showTemplateByRecipe, printModeByRecipe, a4CalibrationByRecipe, templateOffsetByRecipe, templateRotationByRecipe]);
 
   const [selectedCalFieldByRecipe, setSelectedCalFieldByRecipe] = useState<Record<RecipeType, string>>({ A: RECIPE_LAYOUT.A[0].id, B: RECIPE_LAYOUT.B[0].id });
 
@@ -407,6 +417,17 @@ export default function App() {
       ...prev,
       [recipeType]: { ...DEFAULT_PREFS.templateOffsetByRecipe[recipeType] }
     }));
+    setTemplateRotationByRecipe((prev) => ({
+      ...prev,
+      [recipeType]: DEFAULT_PREFS.templateRotationByRecipe[recipeType]
+    }));
+  };
+
+  const onTemplateRotationChange = (deltaDeg: number) => {
+    setTemplateRotationByRecipe((prev) => ({
+      ...prev,
+      [recipeType]: Math.round((prev[recipeType] + deltaDeg) * 10) / 10
+    }));
   };
 
   const onClearAll = () => {
@@ -418,6 +439,7 @@ export default function App() {
     setPrintModeByRecipe(DEFAULT_PREFS.printModeByRecipe);
     setA4CalibrationByRecipe(DEFAULT_A4_CALIBRATION_BY_RECIPE);
     setTemplateOffsetByRecipe(DEFAULT_PREFS.templateOffsetByRecipe);
+    setTemplateRotationByRecipe(DEFAULT_PREFS.templateRotationByRecipe);
     setSelectedCalFieldByRecipe({ A: RECIPE_LAYOUT.A[0].id, B: RECIPE_LAYOUT.B[0].id });
     setLastSavedAt(undefined);
   };
@@ -425,9 +447,9 @@ export default function App() {
   const onSaveSettings = useCallback(() => {
     saveValues(values);
     saveCalibration(calibration);
-    savePrefs({ recipeType, showTemplateByRecipe, printModeByRecipe, a4CalibrationByRecipe, templateOffsetByRecipe });
+    savePrefs({ recipeType, showTemplateByRecipe, printModeByRecipe, a4CalibrationByRecipe, templateOffsetByRecipe, templateRotationByRecipe });
     setLastSavedAt(Date.now());
-  }, [a4CalibrationByRecipe, calibration, printModeByRecipe, recipeType, showTemplateByRecipe, templateOffsetByRecipe, values]);
+  }, [a4CalibrationByRecipe, calibration, printModeByRecipe, recipeType, showTemplateByRecipe, templateOffsetByRecipe, templateRotationByRecipe, values]);
 
   return (
     <div className="app-shell">
@@ -453,6 +475,8 @@ export default function App() {
           onResetA4Calibration={onResetA4Calibration}
           templateOffset={templateOffsetByRecipe[recipeType]}
           onTemplateOffsetChange={onTemplateOffsetChange}
+          templateRotation={templateRotationByRecipe[recipeType]}
+          onTemplateRotationChange={onTemplateRotationChange}
           onResetTemplateOffset={onResetTemplateOffset}
           liveCoordinates={liveCoordinates}
           autoPrintToken={autoPrintToken}
@@ -467,6 +491,7 @@ export default function App() {
           showTemplate={showTemplateByRecipe[recipeType]}
           templateOffset={templateOffsetByRecipe[recipeType]}
           onTemplateOffsetChange={onTemplateOffsetChange}
+          templateRotation={templateRotationByRecipe[recipeType]}
           fields={preview.fields}
           selectedFieldId={selectedCalFieldId}
           onSelectField={(fieldId) => setSelectedCalFieldByRecipe((prev) => ({ ...prev, [recipeType]: fieldId }))}

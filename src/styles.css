@@ -133,9 +133,17 @@ label {
 .paper-preview {
   position: relative;
   border: 1px dashed #aeb8c3;
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-  background-position: left top;
+  overflow: hidden;
+}
+
+.template-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
+  transform-origin: center center;
 }
 
 .preview-field {
@@ -265,7 +273,8 @@ label {
   grid-column: 2;
 }
 
-.scale-row {
+.scale-row,
+.rotate-row {
   display: flex;
   gap: 8px;
 }

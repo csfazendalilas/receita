@@ -47,6 +47,8 @@ type Props = {
   onResetA4Calibration: () => void;
   templateOffset: { xMm: number; yMm: number };
   onTemplateOffsetChange: (key: "xMm" | "yMm", value: number) => void;
+  templateRotation: number;
+  onTemplateRotationChange: (deltaDeg: number) => void;
   onResetTemplateOffset: () => void;
   liveCoordinates: Array<{ id: string; label: string; xMm: number; yMm: number }>;
   autoPrintToken?: number;
@@ -55,6 +57,7 @@ type Props = {
 
 export default function FormPanel(props: Props) {
   const nudgeMm = 1;
+  const nudgeRotDeg = 0.1;
   const nudgeScale = 0.01;
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -149,7 +152,14 @@ export default function FormPanel(props: Props) {
               <button type="button" onClick={() => props.onTemplateOffsetChange("yMm", props.templateOffset.yMm + nudgeMm)}>Baixo</button>
             </div>
             <p className="print-warning">
-              Offset do template: X {props.templateOffset.xMm.toFixed(1)}mm, Y {props.templateOffset.yMm.toFixed(1)}mm
+              Offset: X {props.templateOffset.xMm.toFixed(1)}mm, Y {props.templateOffset.yMm.toFixed(1)}mm
+            </p>
+            <div className="rotate-row">
+              <button type="button" onClick={() => props.onTemplateRotationChange(-nudgeRotDeg)}>↺ Girar esq.</button>
+              <button type="button" onClick={() => props.onTemplateRotationChange(+nudgeRotDeg)}>↻ Girar dir.</button>
+            </div>
+            <p className="print-warning">
+              Rotacao: {props.templateRotation.toFixed(1)}°
             </p>
             <button type="button" onClick={props.onResetTemplateOffset}>Resetar template</button>
           </section>

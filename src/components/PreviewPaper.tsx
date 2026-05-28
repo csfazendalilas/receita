@@ -8,6 +8,7 @@ type Props = {
   showTemplate: boolean;
   templateOffset: { xMm: number; yMm: number };
   onTemplateOffsetChange: (key: "xMm" | "yMm", value: number) => void;
+  templateRotation: number;
   fields: PrintField[];
   selectedFieldId: string;
   onSelectField: (fieldId: string) => void;
@@ -40,6 +41,7 @@ export default function PreviewPaper({
   showTemplate,
   templateOffset,
   onTemplateOffsetChange,
+  templateRotation,
   fields,
   selectedFieldId,
   onSelectField,
@@ -131,8 +133,6 @@ export default function PreviewPaper({
       style={{
         width: `${paper.widthMm}mm`,
         height: `${paper.heightMm}mm`,
-        backgroundImage: showTemplate ? `url(${paper.templateImage})` : "none",
-        backgroundPosition: `${templateOffset.xMm}mm ${templateOffset.yMm}mm`,
         ...(printMode === "a4_auto" && {
           position: "absolute",
           left: `${(A4_WIDTH_MM - paper.widthMm * a4Calibration.scale) / 2 + a4Calibration.offsetXMm}mm`,
@@ -147,6 +147,17 @@ export default function PreviewPaper({
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
     >
+      {showTemplate && (
+        <img
+          src={paper.templateImage}
+          className="template-img"
+          style={{
+            transform: `translate(${templateOffset.xMm}mm, ${templateOffset.yMm}mm) rotate(${templateRotation}deg)`
+          }}
+          draggable={false}
+          alt=""
+        />
+      )}
       {fields.map((field) => (
         <div
           key={field.id}
