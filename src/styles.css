@@ -121,6 +121,15 @@ label {
   padding: 8px;
 }
 
+.a4-preview {
+  position: relative;
+  width: 297mm;
+  height: 210mm;
+  background: #f8f9fb;
+  border: 1px solid #aeb8c3;
+  box-shadow: inset 0 0 0 1px #d3dce6;
+}
+
 .paper-preview {
   position: relative;
   border: 1px dashed #aeb8c3;

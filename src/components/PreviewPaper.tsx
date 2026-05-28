@@ -1,5 +1,6 @@
 import { useRef, type MouseEvent, type PointerEvent } from "react";
 import { PAPER_CONFIG, type RecipeType } from "../lib/layout";
+import type { A4Calibration, PrintMode } from "../lib/print";
 import type { PrintField } from "./PrintButton";
 
 type Props = {
@@ -11,6 +12,8 @@ type Props = {
   selectedFieldId: string;
   onSelectField: (fieldId: string) => void;
   onMoveSelectedField: (xMm: number, yMm: number) => void;
+  printMode: PrintMode;
+  a4Calibration: A4Calibration;
 };
 
 type DragState = {
@@ -29,6 +32,9 @@ type TemplateDragState = {
   startTemplateYMm: number;
 };
 
+const A4_WIDTH_MM = 297;
+const A4_HEIGHT_MM = 210;
+
 export default function PreviewPaper({
   recipeType,
   showTemplate,
@@ -37,7 +43,9 @@ export default function PreviewPaper({
   fields,
   selectedFieldId,
   onSelectField,
-  onMoveSelectedField
+  onMoveSelectedField,
+  printMode,
+  a4Calibration
 }: Props) {
   const paper = PAPER_CONFIG[recipeType];
   const paperRef = useRef<HTMLDivElement | null>(null);
@@ -116,42 +124,63 @@ export default function PreviewPaper({
     onMoveSelectedField(xMm, yMm);
   };
 
+  const paperNode = (
+    <div
+      ref={paperRef}
+      className="paper-preview calibrating"
+      style={{
+        width: `${paper.widthMm}mm`,
+        height: `${paper.heightMm}mm`,
+        backgroundImage: showTemplate ? `url(${paper.templateImage})` : "none",
+        backgroundPosition: `${templateOffset.xMm}mm ${templateOffset.yMm}mm`,
+        ...(printMode === "a4_auto" && {
+          position: "absolute",
+          left: `${(A4_WIDTH_MM - paper.widthMm * a4Calibration.scale) / 2 + a4Calibration.offsetXMm}mm`,
+          top: `${(A4_HEIGHT_MM - paper.heightMm * a4Calibration.scale) / 2 + a4Calibration.offsetYMm}mm`,
+          transform: `scale(${a4Calibration.scale})`,
+          transformOrigin: "top left"
+        })
+      }}
+      onClick={onPaperClick}
+      onPointerDown={onPaperPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+    >
+      {fields.map((field) => (
+        <div
+          key={field.id}
+          className={`preview-field ${field.id === selectedFieldId ? "selected" : ""}`}
+          style={{
+            left: `${field.xMm}mm`,
+            top: `${field.yMm}mm`,
+            width: `${field.maxWidthMm}mm`,
+            maxWidth: `${field.maxWidthMm}mm`,
+            fontSize: `${field.fontSizePt}pt`,
+            letterSpacing: `${field.letterSpacingPt}pt`
+          }}
+          title={`${field.id} (${field.xMm.toFixed(1)}mm, ${field.yMm.toFixed(1)}mm)`}
+          onPointerDown={(event) => onFieldPointerDown(event, field)}
+        >
+          {field.text || " "}
+        </div>
+      ))}
+    </div>
+  );
+
+  if (printMode === "a4_auto") {
+    return (
+      <div className="preview-shell">
+        <div className="a4-preview">
+          {paperNode}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="preview-shell">
-      <div
-        ref={paperRef}
-        className="paper-preview calibrating"
-        style={{
-          width: `${paper.widthMm}mm`,
-          height: `${paper.heightMm}mm`,
-          backgroundImage: showTemplate ? `url(${paper.templateImage})` : "none",
-          backgroundPosition: `${templateOffset.xMm}mm ${templateOffset.yMm}mm`
-        }}
-        onClick={onPaperClick}
-        onPointerDown={onPaperPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-      >
-        {fields.map((field) => (
-          <div
-            key={field.id}
-            className={`preview-field ${field.id === selectedFieldId ? "selected" : ""}`}
-            style={{
-              left: `${field.xMm}mm`,
-              top: `${field.yMm}mm`,
-              width: `${field.maxWidthMm}mm`,
-              maxWidth: `${field.maxWidthMm}mm`,
-              fontSize: `${field.fontSizePt}pt`,
-              letterSpacing: `${field.letterSpacingPt}pt`
-            }}
-            title={`${field.id} (${field.xMm.toFixed(1)}mm, ${field.yMm.toFixed(1)}mm)`}
-            onPointerDown={(event) => onFieldPointerDown(event, field)}
-          >
-            {field.text || " "}
-          </div>
-        ))}
-      </div>
+      {paperNode}
     </div>
   );
 }

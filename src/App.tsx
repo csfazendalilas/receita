@@ -471,6 +471,8 @@ export default function App() {
           selectedFieldId={selectedCalFieldId}
           onSelectField={(fieldId) => setSelectedCalFieldByRecipe((prev) => ({ ...prev, [recipeType]: fieldId }))}
           onMoveSelectedField={onMoveSelectedField}
+          printMode={printModeByRecipe[recipeType]}
+          a4Calibration={a4CalibrationByRecipe[recipeType]}
         />
       </div>
     </div>
