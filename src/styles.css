@@ -136,6 +136,13 @@ label {
   overflow: hidden;
 }
 
+.template-layer {
+  position: absolute;
+  inset: 0;
+  transform-origin: center center;
+  pointer-events: none;
+}
+
 .template-img {
   position: absolute;
   inset: 0;
@@ -143,7 +150,20 @@ label {
   height: 100%;
   pointer-events: none;
   user-select: none;
-  transform-origin: center center;
+}
+
+.template-resize-handle {
+  position: absolute;
+  right: -7px;
+  bottom: -7px;
+  width: 14px;
+  height: 14px;
+  border: 1px solid #0d5d8c;
+  background: rgba(13, 93, 140, 0.85);
+  border-radius: 2px;
+  cursor: nwse-resize;
+  pointer-events: auto;
+  touch-action: none;
 }
 
 .preview-field {

@@ -33,6 +33,7 @@ type Prefs = {
   a4CalibrationByRecipe: A4CalibrationByRecipe;
   templateOffsetByRecipe: Record<RecipeType, { xMm: number; yMm: number }>;
   templateRotationByRecipe: Record<RecipeType, number>;
+  templateScaleByRecipe: Record<RecipeType, { x: number; y: number }>;
 };
 
 const UNIFORM_A_FONT_PT = 9;
@@ -68,7 +69,8 @@ const DEFAULT_PREFS: Prefs = {
   printModeByRecipe: { A: "a4_auto", B: "a4_auto" },
   a4CalibrationByRecipe: DEFAULT_A4_CALIBRATION_BY_RECIPE,
   templateOffsetByRecipe: { A: { xMm: 0, yMm: 0 }, B: { xMm: 0, yMm: 0 } },
-  templateRotationByRecipe: { A: 0, B: 0 }
+  templateRotationByRecipe: { A: 0, B: 0 },
+  templateScaleByRecipe: { A: { x: 1, y: 1 }, B: { x: 1, y: 1 } }
 };
 
 function normalizePrefs(raw: unknown): Prefs {
@@ -106,11 +108,27 @@ function normalizePrefs(raw: unknown): Prefs {
     B: typeof rawRotByRecipe?.B === "number" ? rawRotByRecipe.B : DEFAULT_PREFS.templateRotationByRecipe.B
   };
 
+  const rawScaleByRecipe = obj.templateScaleByRecipe as Partial<Record<RecipeType, { x?: unknown; y?: unknown }>> | undefined;
+  const readScale = (recipe: RecipeType): { x: number; y: number } => {
+    const incoming = rawScaleByRecipe?.[recipe];
+    const x = Number(incoming?.x);
+    const y = Number(incoming?.y);
+    return {
+      x: Number.isFinite(x) && x > 0 ? x : DEFAULT_PREFS.templateScaleByRecipe[recipe].x,
+      y: Number.isFinite(y) && y > 0 ? y : DEFAULT_PREFS.templateScaleByRecipe[recipe].y
+    };
+  };
+  const templateScaleByRecipe: Record<RecipeType, { x: number; y: number }> = {
+    A: readScale("A"),
+    B: readScale("B")
+  };
+
   return {
     recipeType: obj.recipeType === "A" || obj.recipeType === "B" ? (obj.recipeType as RecipeType) : DEFAULT_PREFS.recipeType,
     showTemplateByRecipe,
     printModeByRecipe,
     templateRotationByRecipe,
+    templateScaleByRecipe,
     a4CalibrationByRecipe: {
       A: {
         offsetXMm: Number((a4.A as A4Calibration | undefined)?.offsetXMm ?? DEFAULT_A4_CALIBRATION_BY_RECIPE.A.offsetXMm),
@@ -287,14 +305,14 @@ export default function App() {
   const [a4CalibrationByRecipe, setA4CalibrationByRecipe] = useState<A4CalibrationByRecipe>(savedPrefs.a4CalibrationByRecipe);
   const [templateOffsetByRecipe, setTemplateOffsetByRecipe] = useState<Prefs["templateOffsetByRecipe"]>(savedPrefs.templateOffsetByRecipe);
   const [templateRotationByRecipe, setTemplateRotationByRecipe] = useState<Record<RecipeType, number>>(savedPrefs.templateRotationByRecipe);
-  const [autoPrintToken, setAutoPrintToken] = useState(0);
+  const [templateScaleByRecipe, setTemplateScaleByRecipe] = useState<Record<RecipeType, { x: number; y: number }>>(savedPrefs.templateScaleByRecipe);
   const [lastSavedAt, setLastSavedAt] = useState<number | undefined>(undefined);
 
   // Auto-save prefs (tipo de receita, template, modo de impressão, calibrações A4/template)
   // sempre que qualquer uma dessas preferências mudar — separadas por receita.
   useEffect(() => {
-    savePrefs({ recipeType, showTemplateByRecipe, printModeByRecipe, a4CalibrationByRecipe, templateOffsetByRecipe, templateRotationByRecipe });
-  }, [recipeType, showTemplateByRecipe, printModeByRecipe, a4CalibrationByRecipe, templateOffsetByRecipe, templateRotationByRecipe]);
+    savePrefs({ recipeType, showTemplateByRecipe, printModeByRecipe, a4CalibrationByRecipe, templateOffsetByRecipe, templateRotationByRecipe, templateScaleByRecipe });
+  }, [recipeType, showTemplateByRecipe, printModeByRecipe, a4CalibrationByRecipe, templateOffsetByRecipe, templateRotationByRecipe, templateScaleByRecipe]);
 
   const [selectedCalFieldByRecipe, setSelectedCalFieldByRecipe] = useState<Record<RecipeType, string>>({ A: RECIPE_LAYOUT.A[0].id, B: RECIPE_LAYOUT.B[0].id });
 
@@ -321,8 +339,7 @@ export default function App() {
       patient,
       address,
       dateDdMmYyyy,
-      medication,
-      autoPrint
+      medication
     }: {
       recipeType: RecipeType;
       applyRecipeType?: boolean;
@@ -330,7 +347,6 @@ export default function App() {
       address: string;
       dateDdMmYyyy: string;
       medication?: ExtractedMed;
-      autoPrint?: boolean;
     }) => {
       if (applyRecipeType) setRecipeType(selectedType);
       setValues((prev) => ({
@@ -348,8 +364,6 @@ export default function App() {
             }),
         ...mapMedication(selectedType, medication)
       }));
-
-      if (autoPrint) setAutoPrintToken((prev) => prev + 1);
     },
     []
   );
@@ -421,6 +435,21 @@ export default function App() {
       ...prev,
       [recipeType]: DEFAULT_PREFS.templateRotationByRecipe[recipeType]
     }));
+    setTemplateScaleByRecipe((prev) => ({
+      ...prev,
+      [recipeType]: { ...DEFAULT_PREFS.templateScaleByRecipe[recipeType] }
+    }));
+  };
+
+  const onTemplateScaleChange = (axis: "x" | "y", value: number) => {
+    const safe = Number.isFinite(value) ? Math.max(0.2, Math.round(value * 1000) / 1000) : 1;
+    setTemplateScaleByRecipe((prev) => ({
+      ...prev,
+      [recipeType]: {
+        ...prev[recipeType],
+        [axis]: safe
+      }
+    }));
   };
 
   const onTemplateRotationChange = (deltaDeg: number) => {
@@ -440,6 +469,7 @@ export default function App() {
     setA4CalibrationByRecipe(DEFAULT_A4_CALIBRATION_BY_RECIPE);
     setTemplateOffsetByRecipe(DEFAULT_PREFS.templateOffsetByRecipe);
     setTemplateRotationByRecipe(DEFAULT_PREFS.templateRotationByRecipe);
+    setTemplateScaleByRecipe(DEFAULT_PREFS.templateScaleByRecipe);
     setSelectedCalFieldByRecipe({ A: RECIPE_LAYOUT.A[0].id, B: RECIPE_LAYOUT.B[0].id });
     setLastSavedAt(undefined);
   };
@@ -447,9 +477,9 @@ export default function App() {
   const onSaveSettings = useCallback(() => {
     saveValues(values);
     saveCalibration(calibration);
-    savePrefs({ recipeType, showTemplateByRecipe, printModeByRecipe, a4CalibrationByRecipe, templateOffsetByRecipe, templateRotationByRecipe });
+    savePrefs({ recipeType, showTemplateByRecipe, printModeByRecipe, a4CalibrationByRecipe, templateOffsetByRecipe, templateRotationByRecipe, templateScaleByRecipe });
     setLastSavedAt(Date.now());
-  }, [a4CalibrationByRecipe, calibration, printModeByRecipe, recipeType, showTemplateByRecipe, templateOffsetByRecipe, templateRotationByRecipe, values]);
+  }, [a4CalibrationByRecipe, calibration, printModeByRecipe, recipeType, showTemplateByRecipe, templateOffsetByRecipe, templateRotationByRecipe, templateScaleByRecipe, values]);
 
   return (
     <div className="app-shell">
@@ -477,9 +507,10 @@ export default function App() {
           onTemplateOffsetChange={onTemplateOffsetChange}
           templateRotation={templateRotationByRecipe[recipeType]}
           onTemplateRotationChange={onTemplateRotationChange}
+          templateScale={templateScaleByRecipe[recipeType]}
+          onTemplateScaleChange={onTemplateScaleChange}
           onResetTemplateOffset={onResetTemplateOffset}
           liveCoordinates={liveCoordinates}
-          autoPrintToken={autoPrintToken}
           lastSavedAt={lastSavedAt}
         />
       </div>
@@ -492,6 +523,8 @@ export default function App() {
           templateOffset={templateOffsetByRecipe[recipeType]}
           onTemplateOffsetChange={onTemplateOffsetChange}
           templateRotation={templateRotationByRecipe[recipeType]}
+          templateScale={templateScaleByRecipe[recipeType]}
+          onTemplateScaleChange={onTemplateScaleChange}
           fields={preview.fields}
           selectedFieldId={selectedCalFieldId}
           onSelectField={(fieldId) => setSelectedCalFieldByRecipe((prev) => ({ ...prev, [recipeType]: fieldId }))}

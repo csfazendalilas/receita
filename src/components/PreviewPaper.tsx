@@ -9,6 +9,8 @@ type Props = {
   templateOffset: { xMm: number; yMm: number };
   onTemplateOffsetChange: (key: "xMm" | "yMm", value: number) => void;
   templateRotation: number;
+  templateScale: { x: number; y: number };
+  onTemplateScaleChange: (axis: "x" | "y", value: number) => void;
   fields: PrintField[];
   selectedFieldId: string;
   onSelectField: (fieldId: string) => void;
@@ -33,6 +35,14 @@ type TemplateDragState = {
   startTemplateYMm: number;
 };
 
+type TemplateResizeState = {
+  pointerId: number;
+  startClientX: number;
+  startClientY: number;
+  startScaleX: number;
+  startScaleY: number;
+};
+
 const A4_WIDTH_MM = 297;
 const A4_HEIGHT_MM = 210;
 
@@ -42,6 +52,8 @@ export default function PreviewPaper({
   templateOffset,
   onTemplateOffsetChange,
   templateRotation,
+  templateScale,
+  onTemplateScaleChange,
   fields,
   selectedFieldId,
   onSelectField,
@@ -53,6 +65,7 @@ export default function PreviewPaper({
   const paperRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
   const templateDragRef = useRef<TemplateDragState | null>(null);
+  const templateResizeRef = useRef<TemplateResizeState | null>(null);
 
   const selectedField = fields.find((field) => field.id === selectedFieldId) ?? fields[0];
 
@@ -75,7 +88,27 @@ export default function PreviewPaper({
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
+  const onTemplateResizePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+    templateResizeRef.current = {
+      pointerId: event.pointerId,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startScaleX: templateScale.x,
+      startScaleY: templateScale.y
+    };
+    paperRef.current?.setPointerCapture(event.pointerId);
+  };
+
   const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (templateResizeRef.current && templateResizeRef.current.pointerId === event.pointerId) {
+      // Origem do transform é o centro, então a quina anda metade da variação de tamanho.
+      const dxMm = toMm(event.clientX - templateResizeRef.current.startClientX, "x");
+      const dyMm = toMm(event.clientY - templateResizeRef.current.startClientY, "y");
+      onTemplateScaleChange("x", templateResizeRef.current.startScaleX + (2 * dxMm) / paper.widthMm);
+      onTemplateScaleChange("y", templateResizeRef.current.startScaleY + (2 * dyMm) / paper.heightMm);
+      return;
+    }
     if (templateDragRef.current && templateDragRef.current.pointerId === event.pointerId) {
       const dxMm = toMm(event.clientX - templateDragRef.current.startClientX, "x");
       const dyMm = toMm(event.clientY - templateDragRef.current.startClientY, "y");
@@ -92,6 +125,9 @@ export default function PreviewPaper({
   };
 
   const onPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    if (templateResizeRef.current?.pointerId === event.pointerId) {
+      templateResizeRef.current = null;
+    }
     if (templateDragRef.current?.pointerId === event.pointerId) {
       templateDragRef.current = null;
     }
@@ -148,15 +184,19 @@ export default function PreviewPaper({
       onPointerCancel={onPointerUp}
     >
       {showTemplate && (
-        <img
-          src={paper.templateImage}
-          className="template-img"
+        <div
+          className="template-layer"
           style={{
-            transform: `translate(${templateOffset.xMm}mm, ${templateOffset.yMm}mm) rotate(${templateRotation}deg)`
+            transform: `translate(${templateOffset.xMm}mm, ${templateOffset.yMm}mm) rotate(${templateRotation}deg) scale(${templateScale.x}, ${templateScale.y})`
           }}
-          draggable={false}
-          alt=""
-        />
+        >
+          <img src={paper.templateImage} className="template-img" draggable={false} alt="" />
+          <div
+            className="template-resize-handle"
+            title="Arraste para redimensionar o template (largura/altura independentes)"
+            onPointerDown={onTemplateResizePointerDown}
+          />
+        </div>
       )}
       {fields.map((field) => (
         <div

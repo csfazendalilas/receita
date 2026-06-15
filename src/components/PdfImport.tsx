@@ -9,7 +9,6 @@ export type PrefillPayload = {
   address: string;
   dateDdMmYyyy: string;
   medication?: ExtractedMed;
-  autoPrint?: boolean;
 };
 
 type Props = {
@@ -29,8 +28,8 @@ function inferRecipeTypeFromExtracted(fileName: string, data: ExtractedRx, fallb
   if (byName) return byName;
 
   const text = data.fullText.toLowerCase();
-  if (/notifica[cç][aã]o\s+de\s+receita\s+a/.test(text)) return "A";
-  if (/notifica[cç][aã]o\s+de\s+receita\s+b/.test(text)) return "B";
+  if (/notifica[cï¿½][aï¿½]o\s+de\s+receita\s+a/.test(text)) return "A";
+  if (/notifica[cï¿½][aï¿½]o\s+de\s+receita\s+b/.test(text)) return "B";
 
   const med = data.meds[0];
   if (med?.concentration?.includes("/")) return "B";
@@ -81,8 +80,7 @@ export default function PdfImport({ activeRecipeType, onPrefill }: Props) {
           patient: extracted.patientName,
           address: extracted.address,
           dateDdMmYyyy: extracted.dateDdMmYyyy,
-          medication: extracted.meds[0],
-          autoPrint: true
+          medication: extracted.meds[0]
         });
       } catch (err) {
         if (cancelled) return;
@@ -107,8 +105,7 @@ export default function PdfImport({ activeRecipeType, onPrefill }: Props) {
       patient: data.patientName,
       address: data.address,
       dateDdMmYyyy: data.dateDdMmYyyy,
-      medication: meds[nextMedicationIndex],
-      autoPrint: false
+      medication: meds[nextMedicationIndex]
     });
   };
 

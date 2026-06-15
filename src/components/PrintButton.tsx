@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react";
 import { PAPER_CONFIG, type RecipeType } from "../lib/layout";
 import type { A4Calibration, PrintMode } from "../lib/print";
 
@@ -17,7 +16,6 @@ type Props = {
   fields: PrintField[];
   printMode: PrintMode;
   a4Calibration: A4Calibration;
-  autoPrintToken?: number;
 };
 
 function escapeHtml(value: string): string {
@@ -118,9 +116,7 @@ function buildPrintHtml(recipeType: RecipeType, fields: PrintField[], printMode:
 </html>`;
 }
 
-export default function PrintButton({ recipeType, fields, printMode, a4Calibration, autoPrintToken }: Props) {
-  const lastAutoPrintToken = useRef(0);
-
+export default function PrintButton({ recipeType, fields, printMode, a4Calibration }: Props) {
   const onPrint = () => {
     const printWindow = window.open("", "_blank", "width=1000,height=700");
     if (!printWindow) {
@@ -137,15 +133,6 @@ export default function PrintButton({ recipeType, fields, printMode, a4Calibrati
       printWindow.print();
     }, 250);
   };
-
-  useEffect(() => {
-    if (!autoPrintToken) return;
-    if (autoPrintToken === lastAutoPrintToken.current) return;
-    if (!fields.some((field) => field.text.trim())) return;
-
-    lastAutoPrintToken.current = autoPrintToken;
-    onPrint();
-  }, [autoPrintToken, fields, recipeType, printMode, a4Calibration]);
 
   return (
     <div className="print-box">

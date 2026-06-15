@@ -49,9 +49,10 @@ type Props = {
   onTemplateOffsetChange: (key: "xMm" | "yMm", value: number) => void;
   templateRotation: number;
   onTemplateRotationChange: (deltaDeg: number) => void;
+  templateScale: { x: number; y: number };
+  onTemplateScaleChange: (axis: "x" | "y", value: number) => void;
   onResetTemplateOffset: () => void;
   liveCoordinates: Array<{ id: string; label: string; xMm: number; yMm: number }>;
-  autoPrintToken?: number;
   lastSavedAt?: number;
 };
 
@@ -59,6 +60,7 @@ export default function FormPanel(props: Props) {
   const nudgeMm = 1;
   const nudgeRotDeg = 0.1;
   const nudgeScale = 0.01;
+  const nudgeTemplateScale = 0.02;
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   return (
@@ -161,6 +163,18 @@ export default function FormPanel(props: Props) {
             <p className="print-warning">
               Rotacao: {props.templateRotation.toFixed(1)}°
             </p>
+            <p className="print-warning">Tamanho (desproporcional). Dica: arraste a quina azul no preview.</p>
+            <div className="scale-row">
+              <button type="button" onClick={() => props.onTemplateScaleChange("x", props.templateScale.x - nudgeTemplateScale)}>Largura -</button>
+              <button type="button" onClick={() => props.onTemplateScaleChange("x", props.templateScale.x + nudgeTemplateScale)}>Largura +</button>
+            </div>
+            <div className="scale-row">
+              <button type="button" onClick={() => props.onTemplateScaleChange("y", props.templateScale.y - nudgeTemplateScale)}>Altura -</button>
+              <button type="button" onClick={() => props.onTemplateScaleChange("y", props.templateScale.y + nudgeTemplateScale)}>Altura +</button>
+            </div>
+            <p className="print-warning">
+              Escala: Largura {props.templateScale.x.toFixed(2)}x, Altura {props.templateScale.y.toFixed(2)}x
+            </p>
             <button type="button" onClick={props.onResetTemplateOffset}>Resetar template</button>
           </section>
 
@@ -215,7 +229,6 @@ export default function FormPanel(props: Props) {
         fields={props.printFields}
         printMode={props.printMode}
         a4Calibration={props.a4Calibration}
-        autoPrintToken={props.autoPrintToken}
       />
 
       <section className="panel-box">
