@@ -133,7 +133,8 @@ label {
 .paper-preview {
   position: relative;
   border: 1px dashed #aeb8c3;
-  overflow: hidden;
+  /* overflow livre: o template pode passar do papel e ocupar a area A4 */
+  overflow: visible;
 }
 
 .template-layer {

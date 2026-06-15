@@ -1,4 +1,4 @@
-import { useRef, type MouseEvent, type PointerEvent } from "react";
+import { useRef, type PointerEvent } from "react";
 import { PAPER_CONFIG, type RecipeType } from "../lib/layout";
 import type { A4Calibration, PrintMode } from "../lib/print";
 import type { PrintField } from "./PrintButton";
@@ -66,8 +66,6 @@ export default function PreviewPaper({
   const dragRef = useRef<DragState | null>(null);
   const templateDragRef = useRef<TemplateDragState | null>(null);
   const templateResizeRef = useRef<TemplateResizeState | null>(null);
-
-  const selectedField = fields.find((field) => field.id === selectedFieldId) ?? fields[0];
 
   const toMm = (deltaPx: number, axis: "x" | "y"): number => {
     const rect = paperRef.current?.getBoundingClientRect();
@@ -150,18 +148,6 @@ export default function PreviewPaper({
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
-  const onPaperClick = (event: MouseEvent<HTMLDivElement>) => {
-    if (event.target !== event.currentTarget) return;
-    if (event.altKey) return;
-    if (!selectedField) return;
-
-    const rect = event.currentTarget.getBoundingClientRect();
-    const xMm = toMm(event.clientX - rect.left, "x");
-    const yMm = toMm(event.clientY - rect.top, "y");
-
-    onMoveSelectedField(xMm, yMm);
-  };
-
   const paperNode = (
     <div
       ref={paperRef}
@@ -177,7 +163,6 @@ export default function PreviewPaper({
           transformOrigin: "top left"
         })
       }}
-      onClick={onPaperClick}
       onPointerDown={onPaperPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
