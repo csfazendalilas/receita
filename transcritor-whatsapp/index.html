@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#075E54" />
+  <title>Transcritor de Áudio do WhatsApp</title>
+  <meta name="description" content="Transcreva áudios do WhatsApp direto no navegador do seu iPhone. Funciona offline, sem servidor e sem enviar seu áudio para lugar nenhum." />
+
+  <!-- PWA / iOS -->
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Transcritor" />
+
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="app__header">
+      <div class="app__logo" aria-hidden="true">🎙️</div>
+      <h1>Transcritor de Áudio</h1>
+      <p class="app__subtitle">Áudios do WhatsApp → texto, direto no seu iPhone</p>
+    </header>
+
+    <section class="card" id="dropzone">
+      <label class="picker" for="fileInput">
+        <span class="picker__icon" aria-hidden="true">📎</span>
+        <span class="picker__title">Escolher áudio</span>
+        <span class="picker__hint">.opus &middot; .ogg &middot; .m4a &middot; .mp3 &middot; .wav</span>
+      </label>
+      <input id="fileInput" type="file" accept="audio/*,.opus,.ogg,.m4a,.mp3,.wav,.aac" />
+      <div id="fileInfo" class="fileinfo" hidden></div>
+    </section>
+
+    <section class="card options" aria-label="Opções de transcrição">
+      <div class="field">
+        <label for="langSelect">Idioma do áudio</label>
+        <select id="langSelect">
+          <option value="portuguese" selected>Português</option>
+          <option value="auto">Detectar automaticamente</option>
+          <option value="english">Inglês</option>
+          <option value="spanish">Espanhol</option>
+          <option value="french">Francês</option>
+          <option value="italian">Italiano</option>
+          <option value="german">Alemão</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="modelSelect">Qualidade do modelo</label>
+        <select id="modelSelect">
+          <option value="Xenova/whisper-tiny">Rápido (tiny ~40 MB)</option>
+          <option value="Xenova/whisper-base" selected>Equilibrado (base ~80 MB)</option>
+          <option value="Xenova/whisper-small">Preciso (small ~250 MB)</option>
+        </select>
+        <p class="field__hint">O modelo é baixado uma vez e fica em cache no aparelho.</p>
+      </div>
+    </section>
+
+    <button id="transcribeBtn" class="btn btn--primary" disabled>
+      Transcrever
+    </button>
+
+    <section id="statusBox" class="status" hidden>
+      <div class="status__spinner" aria-hidden="true"></div>
+      <p id="statusText" class="status__text">Preparando…</p>
+      <div class="progress" id="progressWrap" hidden>
+        <div class="progress__bar" id="progressBar"></div>
+      </div>
+      <p id="progressLabel" class="status__sub" hidden></p>
+    </section>
+
+    <section id="resultBox" class="card result" hidden>
+      <div class="result__head">
+        <h2>Transcrição</h2>
+        <div class="result__actions">
+          <button id="copyBtn" class="btn btn--ghost" title="Copiar">Copiar</button>
+          <button id="shareBtn" class="btn btn--ghost" title="Compartilhar">Compartilhar</button>
+          <button id="downloadBtn" class="btn btn--ghost" title="Baixar .txt">Baixar</button>
+        </div>
+      </div>
+      <textarea id="resultText" class="result__text" spellcheck="false" aria-label="Texto transcrito"></textarea>
+      <p id="copyFeedback" class="result__feedback" hidden>Copiado ✓</p>
+    </section>
+
+    <details class="help">
+      <summary>Como mandar o áudio do WhatsApp (iPhone)</summary>
+      <ol>
+        <li>No WhatsApp, toque e segure o áudio (ou abra a foto/áudio) e toque em <strong>Encaminhar</strong> / <strong>Compartilhar</strong>.</li>
+        <li>Escolha <strong>Salvar em Arquivos</strong> (Save to Files).</li>
+        <li>Abra este app e toque em <strong>Escolher áudio</strong> → <strong>Procurar</strong> e selecione o arquivo salvo.</li>
+        <li>Toque em <strong>Transcrever</strong>. Tudo acontece no próprio iPhone — nada é enviado para a internet.</li>
+      </ol>
+      <p class="help__note">Dica: adicione este site à Tela de Início (botão Compartilhar do Safari → "Adicionar à Tela de Início") para abrir como um app.</p>
+    </details>
+
+    <footer class="app__footer">
+      <span id="engineInfo">Processado no aparelho · Whisper (transformers.js)</span>
+    </footer>
+  </main>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
