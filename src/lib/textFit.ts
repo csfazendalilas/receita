@@ -55,16 +55,19 @@ export function fitTextToWidth(options: {
   letterSpacingPt: number;
 }): FittedText {
   const { text, maxWidthMm, preferredFontPt, minFontPt, letterSpacingPt } = options;
-  const safeText = text.trim();
+  const safeText = text.replace(/\r\n?/g, "\n").trim();
   if (!safeText) {
     return { text: "", fontSizePt: preferredFontPt, fitsWithoutTruncation: true, truncated: false };
   }
 
+  const lines = safeText.split("\n");
   const maxWidthPx = maxWidthMm * MM_TO_PX;
   for (let font = preferredFontPt; font >= minFontPt; font -= 0.25) {
     const rounded = Math.round(font * 100) / 100;
-    const width = measureTextWidthPx(safeText, rounded, letterSpacingPt);
-    if (width <= maxWidthPx) {
+    const allLinesFit = lines.every(
+      (line) => measureTextWidthPx(line, rounded, letterSpacingPt) <= maxWidthPx
+    );
+    if (allLinesFit) {
       return {
         text: safeText,
         fontSizePt: rounded,
@@ -74,11 +77,15 @@ export function fitTextToWidth(options: {
     }
   }
 
-  const truncated = truncateToFit(safeText, maxWidthPx, minFontPt, letterSpacingPt);
+  const truncatedLines = lines.map((line) =>
+    truncateToFit(line, maxWidthPx, minFontPt, letterSpacingPt)
+  );
+  const truncated = truncatedLines.join("\n");
+  const wasTruncated = truncatedLines.some((line, index) => line !== lines[index]);
   return {
     text: truncated,
     fontSizePt: minFontPt,
-    fitsWithoutTruncation: false,
-    truncated: true
+    fitsWithoutTruncation: !wasTruncated,
+    truncated: wasTruncated
   };
 }

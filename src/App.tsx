@@ -155,24 +155,31 @@ function normalizePrefs(raw: unknown): Prefs {
 }
 
 function simplifyAddressStreetNumber(address: string): string {
-  const clean = address.replace(/\s+/g, " ").trim();
-  if (!clean) return "";
+  return address
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((line) => {
+      const clean = line.replace(/[ \t]+/g, " ").trim();
+      if (!clean) return "";
 
-  const parts = clean.split(",").map((part) => part.trim()).filter(Boolean);
-  if (parts.length === 0) return clean;
+      const parts = clean.split(",").map((part) => part.trim()).filter(Boolean);
+      if (parts.length === 0) return clean;
 
-  const street = parts[0];
-  let number = "";
+      const street = parts[0];
+      let number = "";
 
-  for (const part of parts.slice(1)) {
-    const m = /(\d+[A-Za-z\-\/]*)/.exec(part);
-    if (m?.[1]) {
-      number = m[1];
-      break;
-    }
-  }
+      for (const part of parts.slice(1)) {
+        const m = /(\d+[A-Za-z\-\/]*)/.exec(part);
+        if (m?.[1]) {
+          number = m[1];
+          break;
+        }
+      }
 
-  return number ? `${street}, ${number}` : street;
+      return number ? `${street}, ${number}` : street;
+    })
+    .join("\n")
+    .trim();
 }
 
 function getRawFieldValue(recipeType: RecipeType, fieldId: string, values: FormValues): string {

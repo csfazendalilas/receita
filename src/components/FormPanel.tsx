@@ -88,12 +88,13 @@ export default function FormPanel(props: Props) {
       {props.recipeType === "A" ? (
         <section className="panel-box">
           <h3>Campos da Receita A</h3>
+          <p className="print-warning">Use Enter nos campos de texto para imprimir em duas linhas.</p>
           <label>Data<input value={props.values.a_date} onChange={(e) => props.onValueChange("a_date", e.target.value)} /></label>
-          <label>Paciente<input value={props.values.a_patient} onChange={(e) => props.onValueChange("a_patient", e.target.value)} /></label>
-          <label>Endereco<input value={props.values.a_address} onChange={(e) => props.onValueChange("a_address", e.target.value)} /></label>
+          <label>Paciente<textarea rows={2} value={props.values.a_patient} onChange={(e) => props.onValueChange("a_patient", e.target.value)} /></label>
+          <label>Endereco<textarea rows={2} value={props.values.a_address} onChange={(e) => props.onValueChange("a_address", e.target.value)} /></label>
           <label>
             Override do endereco final (opcional)
-            <input value={props.values.a_address_override} onChange={(e) => props.onValueChange("a_address_override", e.target.value)} />
+            <textarea rows={2} value={props.values.a_address_override} onChange={(e) => props.onValueChange("a_address_override", e.target.value)} />
           </label>
           <label className="checkbox">
             <input type="checkbox" checked={props.values.a_use_city_abbrev} onChange={(e) => props.onValueChange("a_use_city_abbrev", e.target.checked)} />
@@ -102,19 +103,20 @@ export default function FormPanel(props: Props) {
           <p className={props.addressInfo.status === "fits" ? "ok-msg" : "warn-msg"}>
             Endereco: {props.addressInfo.status}. Texto final: {props.addressInfo.finalText || "(vazio)"}
           </p>
-          <label>Medicamento<input value={props.values.a_drug_name} onChange={(e) => props.onValueChange("a_drug_name", e.target.value)} /></label>
-          <label>Quantidade e apresentacao<input value={props.values.a_qty} onChange={(e) => props.onValueChange("a_qty", e.target.value)} /></label>
-          <label>Form. Farm. Concentr./Unid. Posologia<input value={props.values.a_form_posology} onChange={(e) => props.onValueChange("a_form_posology", e.target.value)} /></label>
+          <label>Medicamento<textarea rows={2} value={props.values.a_drug_name} onChange={(e) => props.onValueChange("a_drug_name", e.target.value)} /></label>
+          <label>Quantidade e apresentacao<textarea rows={2} value={props.values.a_qty} onChange={(e) => props.onValueChange("a_qty", e.target.value)} /></label>
+          <label>Form. Farm. Concentr./Unid. Posologia<textarea rows={2} value={props.values.a_form_posology} onChange={(e) => props.onValueChange("a_form_posology", e.target.value)} /></label>
         </section>
       ) : (
         <section className="panel-box">
           <h3>Campos da Receita B</h3>
+          <p className="print-warning">Use Enter nos campos de texto para imprimir em duas linhas.</p>
           <label>Data base<input value={props.values.b_date} onChange={(e) => props.onValueChange("b_date", e.target.value)} /></label>
-          <label>Paciente<input value={props.values.b_patient} onChange={(e) => props.onValueChange("b_patient", e.target.value)} /></label>
-          <label>Endereco<input value={props.values.b_address} onChange={(e) => props.onValueChange("b_address", e.target.value)} /></label>
+          <label>Paciente<textarea rows={2} value={props.values.b_patient} onChange={(e) => props.onValueChange("b_patient", e.target.value)} /></label>
+          <label>Endereco<textarea rows={2} value={props.values.b_address} onChange={(e) => props.onValueChange("b_address", e.target.value)} /></label>
           <label>
             Override do endereco final (opcional)
-            <input value={props.values.b_address_override} onChange={(e) => props.onValueChange("b_address_override", e.target.value)} />
+            <textarea rows={2} value={props.values.b_address_override} onChange={(e) => props.onValueChange("b_address_override", e.target.value)} />
           </label>
           <label className="checkbox">
             <input type="checkbox" checked={props.values.b_use_city_abbrev} onChange={(e) => props.onValueChange("b_use_city_abbrev", e.target.checked)} />
@@ -123,10 +125,10 @@ export default function FormPanel(props: Props) {
           <p className={props.addressInfo.status === "fits" ? "ok-msg" : "warn-msg"}>
             Endereco: {props.addressInfo.status}. Texto final: {props.addressInfo.finalText || "(vazio)"}
           </p>
-          <label>Medicamento ou Substancia<input value={props.values.b_drug} onChange={(e) => props.onValueChange("b_drug", e.target.value)} /></label>
-          <label>Quantidade e Forma Farmaceutica<input value={props.values.b_qty_form} onChange={(e) => props.onValueChange("b_qty_form", e.target.value)} /></label>
-          <label>Dose por Unidade Posologica<input value={props.values.b_dose_unit} onChange={(e) => props.onValueChange("b_dose_unit", e.target.value)} /></label>
-          <label>Posologia<input value={props.values.b_posology} onChange={(e) => props.onValueChange("b_posology", e.target.value)} /></label>
+          <label>Medicamento ou Substancia<textarea rows={2} value={props.values.b_drug} onChange={(e) => props.onValueChange("b_drug", e.target.value)} /></label>
+          <label>Quantidade e Forma Farmaceutica<textarea rows={2} value={props.values.b_qty_form} onChange={(e) => props.onValueChange("b_qty_form", e.target.value)} /></label>
+          <label>Dose por Unidade Posologica<textarea rows={2} value={props.values.b_dose_unit} onChange={(e) => props.onValueChange("b_dose_unit", e.target.value)} /></label>
+          <label>Posologia<textarea rows={2} value={props.values.b_posology} onChange={(e) => props.onValueChange("b_posology", e.target.value)} /></label>
         </section>
       )}
 

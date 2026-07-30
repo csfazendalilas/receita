@@ -21,17 +21,24 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 6px;
   padding: 6px 8px;
   background: #fff;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 52px;
 }
 
 button {
@@ -169,11 +176,10 @@ label {
 
 .preview-field {
   position: absolute;
-  white-space: nowrap;
-  line-height: 1;
+  white-space: pre;
+  line-height: 1.05;
   font-family: Arial, sans-serif;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .calibration-grid {
@@ -257,7 +263,6 @@ label {
   cursor: grab;
   user-select: none;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .preview-field.selected {

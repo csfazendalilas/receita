@@ -75,9 +75,8 @@ function buildPrintHtml(recipeType: RecipeType, fields: PrintField[], printMode:
       .field {
         position: absolute;
         overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        line-height: 1;
+        white-space: pre;
+        line-height: 1.05;
       }
     </style>
   </head>
@@ -104,9 +103,8 @@ function buildPrintHtml(recipeType: RecipeType, fields: PrintField[], printMode:
       .field {
         position: absolute;
         overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        line-height: 1;
+        white-space: pre;
+        line-height: 1.05;
       }
     </style>
   </head>
