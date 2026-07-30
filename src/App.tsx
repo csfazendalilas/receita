@@ -489,57 +489,92 @@ export default function App() {
   }, [a4CalibrationByRecipe, calibration, printModeByRecipe, recipeType, showTemplateByRecipe, templateOffsetByRecipe, templateRotationByRecipe, templateScaleByRecipe, values]);
 
   return (
-    <div className="app-shell">
-      <div className="left-panel">
-        <PdfImport activeRecipeType={recipeType} onPrefill={onPrefillFromPdf} />
+    <div className={`app-shell recipe-${recipeType.toLowerCase()}`}>
+      <header className="app-header">
+        <div className="brand-lockup">
+          <span className="brand-mark" aria-hidden="true">Rx</span>
+          <div>
+            <p className="eyebrow">Prescricao local</p>
+            <h1>Receita pronta.</h1>
+          </div>
+        </div>
+        <p className="header-copy">
+          Importe, revise e imprima com a calibracao certa. Seus dados permanecem neste navegador.
+        </p>
+        <div className="header-status" aria-label="Status atual">
+          <span className="status-chip status-chip-strong">Receita {recipeType}</span>
+          <span className="status-chip">
+            {printModeByRecipe[recipeType] === "a4_auto" ? "A4 automatico" : "Tamanho exato"}
+          </span>
+          <span className={`status-chip ${showTemplateByRecipe[recipeType] ? "is-on" : ""}`}>
+            Template {showTemplateByRecipe[recipeType] ? "visivel" : "oculto"}
+          </span>
+        </div>
+      </header>
 
-        <FormPanel
-          recipeType={recipeType}
-          setRecipeType={setRecipeType}
-          showTemplate={showTemplateByRecipe[recipeType]}
-          setShowTemplate={(value) => setShowTemplateByRecipe((prev) => ({ ...prev, [recipeType]: value }))}
-          values={values}
-          onValueChange={onValueChange}
-          onResetCalibration={onResetCalibration}
-          onClearAll={onClearAll}
-          onSaveSettings={onSaveSettings}
-          printFields={preview.fields}
-          addressInfo={preview.addressInfo}
-          printMode={printModeByRecipe[recipeType]}
-          onPrintModeChange={(mode) => setPrintModeByRecipe((prev) => ({ ...prev, [recipeType]: mode }))}
-          a4Calibration={a4CalibrationByRecipe[recipeType]}
-          onA4CalibrationChange={onA4CalibrationChange}
-          onResetA4Calibration={onResetA4Calibration}
-          templateOffset={templateOffsetByRecipe[recipeType]}
-          onTemplateOffsetChange={onTemplateOffsetChange}
-          templateRotation={templateRotationByRecipe[recipeType]}
-          onTemplateRotationChange={onTemplateRotationChange}
-          templateScale={templateScaleByRecipe[recipeType]}
-          onTemplateScaleChange={onTemplateScaleChange}
-          onResetTemplateOffset={onResetTemplateOffset}
-          liveCoordinates={liveCoordinates}
-          lastSavedAt={lastSavedAt}
-        />
-      </div>
+      <main className="app-workspace">
+        <aside className="left-panel" aria-label="Dados da receita">
+          <PdfImport activeRecipeType={recipeType} onPrefill={onPrefillFromPdf} />
 
-      <div className="right-panel">
-        <h2>Preview ao vivo</h2>
-        <PreviewPaper
-          recipeType={recipeType}
-          showTemplate={showTemplateByRecipe[recipeType]}
-          templateOffset={templateOffsetByRecipe[recipeType]}
-          onTemplateOffsetChange={onTemplateOffsetChange}
-          templateRotation={templateRotationByRecipe[recipeType]}
-          templateScale={templateScaleByRecipe[recipeType]}
-          onTemplateScaleChange={onTemplateScaleChange}
-          fields={preview.fields}
-          selectedFieldId={selectedCalFieldId}
-          onSelectField={(fieldId) => setSelectedCalFieldByRecipe((prev) => ({ ...prev, [recipeType]: fieldId }))}
-          onMoveSelectedField={onMoveSelectedField}
-          printMode={printModeByRecipe[recipeType]}
-          a4Calibration={a4CalibrationByRecipe[recipeType]}
-        />
-      </div>
+          <FormPanel
+            recipeType={recipeType}
+            setRecipeType={setRecipeType}
+            showTemplate={showTemplateByRecipe[recipeType]}
+            setShowTemplate={(value) => setShowTemplateByRecipe((prev) => ({ ...prev, [recipeType]: value }))}
+            values={values}
+            onValueChange={onValueChange}
+            onResetCalibration={onResetCalibration}
+            onClearAll={onClearAll}
+            onSaveSettings={onSaveSettings}
+            printFields={preview.fields}
+            addressInfo={preview.addressInfo}
+            printMode={printModeByRecipe[recipeType]}
+            onPrintModeChange={(mode) => setPrintModeByRecipe((prev) => ({ ...prev, [recipeType]: mode }))}
+            a4Calibration={a4CalibrationByRecipe[recipeType]}
+            onA4CalibrationChange={onA4CalibrationChange}
+            onResetA4Calibration={onResetA4Calibration}
+            templateOffset={templateOffsetByRecipe[recipeType]}
+            onTemplateOffsetChange={onTemplateOffsetChange}
+            templateRotation={templateRotationByRecipe[recipeType]}
+            onTemplateRotationChange={onTemplateRotationChange}
+            templateScale={templateScaleByRecipe[recipeType]}
+            onTemplateScaleChange={onTemplateScaleChange}
+            onResetTemplateOffset={onResetTemplateOffset}
+            liveCoordinates={liveCoordinates}
+            lastSavedAt={lastSavedAt}
+          />
+        </aside>
+
+        <section className="right-panel" aria-label="Preview da receita">
+          <div className="preview-toolbar">
+            <div>
+              <p className="eyebrow">Mesa de impressao</p>
+              <h2>Preview ao vivo</h2>
+            </div>
+            <div className="preview-legend">
+              <span><i className="legend-dot legend-field" />Arraste os textos</span>
+              <span><i className="legend-dot legend-template" />Alt + arraste o fundo</span>
+            </div>
+          </div>
+          <div className="preview-stage">
+            <PreviewPaper
+              recipeType={recipeType}
+              showTemplate={showTemplateByRecipe[recipeType]}
+              templateOffset={templateOffsetByRecipe[recipeType]}
+              onTemplateOffsetChange={onTemplateOffsetChange}
+              templateRotation={templateRotationByRecipe[recipeType]}
+              templateScale={templateScaleByRecipe[recipeType]}
+              onTemplateScaleChange={onTemplateScaleChange}
+              fields={preview.fields}
+              selectedFieldId={selectedCalFieldId}
+              onSelectField={(fieldId) => setSelectedCalFieldByRecipe((prev) => ({ ...prev, [recipeType]: fieldId }))}
+              onMoveSelectedField={onMoveSelectedField}
+              printMode={printModeByRecipe[recipeType]}
+              a4Calibration={a4CalibrationByRecipe[recipeType]}
+            />
+          </div>
+        </section>
+      </main>
     </div>
   );
 }

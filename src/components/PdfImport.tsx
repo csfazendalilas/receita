@@ -28,8 +28,8 @@ function inferRecipeTypeFromExtracted(fileName: string, data: ExtractedRx, fallb
   if (byName) return byName;
 
   const text = data.fullText.toLowerCase();
-  if (/notifica[c�][a�]o\s+de\s+receita\s+a/.test(text)) return "A";
-  if (/notifica[c�][a�]o\s+de\s+receita\s+b/.test(text)) return "B";
+  if (/notifica[c\u00E7][a\u00E3]o\s+de\s+receita\s+a/.test(text)) return "A";
+  if (/notifica[c\u00E7][a\u00E3]o\s+de\s+receita\s+b/.test(text)) return "B";
 
   const med = data.meds[0];
   if (med?.concentration?.includes("/")) return "B";
@@ -110,27 +110,41 @@ export default function PdfImport({ activeRecipeType, onPrefill }: Props) {
   };
 
   return (
-    <section className="panel-box">
-      <h3>Importar PDF do prontuario</h3>
-      <input
-        type="file"
-        accept="application/pdf"
-        onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
-      />
-      <p className="print-warning">Ao escolher o arquivo, os dados sao extraidos e preenchidos automaticamente.</p>
-      <label className="checkbox">
+    <section className="panel-box import-card">
+      <div className="import-heading">
+        <div>
+          <p className="section-kicker">Atalho inteligente</p>
+          <h3>Importar do prontuario</h3>
+        </div>
+        <span className="optional-badge">Opcional</span>
+      </div>
+
+      <label className="file-drop">
+        <input
+          type="file"
+          accept="application/pdf"
+          onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
+        />
+        <span className="file-drop-icon" aria-hidden="true">PDF</span>
+        <span>
+          <strong>{selectedFile ? selectedFile.name : "Escolher arquivo PDF"}</strong>
+          <small>{selectedFile ? "Clique para substituir" : "Os campos serao preenchidos automaticamente"}</small>
+        </span>
+      </label>
+
+      <label className="toggle-row toggle-row-compact">
         <input
           type="checkbox"
           checked={applyDetectedRecipeType}
           onChange={(event) => setApplyDetectedRecipeType(event.target.checked)}
         />
-        Trocar automaticamente para o tipo detectado no PDF
+        <span>Usar automaticamente o tipo detectado</span>
       </label>
       {loading && <p className="print-warning">Lendo PDF...</p>}
       {error && <p className="error-msg">{error}</p>}
 
       {data && (
-        <div className="import-result">
+        <div className="import-result extraction-card">
           <label>
             Tipo de receita detectado:
             <select

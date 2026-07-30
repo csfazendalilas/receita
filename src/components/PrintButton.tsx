@@ -134,18 +134,21 @@ export default function PrintButton({ recipeType, fields, printMode, a4Calibrati
 
   return (
     <div className="print-box">
+      <div className="print-copy">
+        <span className="step-number">04</span>
+        <div>
+          <p className="section-kicker">Finalizar</p>
+          <strong>Revise o preview</strong>
+          <small>
+            {printMode === "a4_auto"
+              ? "A4 em paisagem, com o ajuste salvo."
+              : "Tamanho exato, em escala 100%."}
+          </small>
+        </div>
+      </div>
       <button type="button" onClick={onPrint} className="primary-btn">
-        Imprimir Receita {recipeType}
+        Imprimir receita {recipeType}
       </button>
-      {printMode === "a4_auto" ? (
-        <p className="print-warning">
-          Modo A4 automatico (paisagem): centraliza a receita na pagina e permite ajuste fino por setas.
-        </p>
-      ) : (
-        <p className="print-warning">
-          Modo exato: use escala 100% e "Tamanho real".
-        </p>
-      )}
     </div>
   );
 }

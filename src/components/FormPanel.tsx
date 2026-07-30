@@ -65,88 +65,168 @@ export default function FormPanel(props: Props) {
 
   return (
     <div className="form-panel">
-      <section className="panel-box">
-        <h2>Receita controlada</h2>
-        <label>
-          Tipo:
-          <select value={props.recipeType} onChange={(e) => props.setRecipeType(e.target.value as RecipeType)}>
-            <option value="A">Notificacao A (219x100mm)</option>
-            <option value="B">Notificacao B (212x96mm)</option>
-          </select>
-        </label>
+      <section className="panel-box setup-card">
+        <div className="section-heading">
+          <span className="step-number">01</span>
+          <div>
+            <p className="section-kicker">Formulario</p>
+            <h2>Escolha o tipo</h2>
+          </div>
+        </div>
 
-        <label className="checkbox">
+        <div className="recipe-switch" role="group" aria-label="Tipo de receita">
+          <button
+            type="button"
+            className={props.recipeType === "A" ? "recipe-option active" : "recipe-option"}
+            aria-pressed={props.recipeType === "A"}
+            onClick={() => props.setRecipeType("A")}
+          >
+            <strong>Receita A</strong>
+            <span>219 × 100 mm</span>
+          </button>
+          <button
+            type="button"
+            className={props.recipeType === "B" ? "recipe-option active" : "recipe-option"}
+            aria-pressed={props.recipeType === "B"}
+            onClick={() => props.setRecipeType("B")}
+          >
+            <strong>Receita B</strong>
+            <span>212 × 96 mm</span>
+          </button>
+        </div>
+
+        <label className="toggle-row">
           <input
             type="checkbox"
             checked={props.showTemplate}
             onChange={(event) => props.setShowTemplate(event.target.checked)}
           />
-          Mostrar imagem template no preview
+          <span>
+            <strong>Exibir formulario no preview</strong>
+            <small>O fundo nunca e impresso por padrao.</small>
+          </span>
         </label>
       </section>
 
       {props.recipeType === "A" ? (
-        <section className="panel-box">
-          <h3>Campos da Receita A</h3>
-          <p className="print-warning">Use Enter nos campos de texto para imprimir em duas linhas.</p>
-          <label>Data<input value={props.values.a_date} onChange={(e) => props.onValueChange("a_date", e.target.value)} /></label>
-          <label>Paciente<textarea rows={2} value={props.values.a_patient} onChange={(e) => props.onValueChange("a_patient", e.target.value)} /></label>
-          <label>Endereco<textarea rows={2} value={props.values.a_address} onChange={(e) => props.onValueChange("a_address", e.target.value)} /></label>
-          <label>
-            Override do endereco final (opcional)
-            <textarea rows={2} value={props.values.a_address_override} onChange={(e) => props.onValueChange("a_address_override", e.target.value)} />
-          </label>
-          <label className="checkbox">
-            <input type="checkbox" checked={props.values.a_use_city_abbrev} onChange={(e) => props.onValueChange("a_use_city_abbrev", e.target.checked)} />
-            Permitir abreviacoes de cidade/estado
-          </label>
-          <p className={props.addressInfo.status === "fits" ? "ok-msg" : "warn-msg"}>
-            Endereco: {props.addressInfo.status}. Texto final: {props.addressInfo.finalText || "(vazio)"}
-          </p>
-          <label>Medicamento<textarea rows={2} value={props.values.a_drug_name} onChange={(e) => props.onValueChange("a_drug_name", e.target.value)} /></label>
-          <label>Quantidade e apresentacao<textarea rows={2} value={props.values.a_qty} onChange={(e) => props.onValueChange("a_qty", e.target.value)} /></label>
-          <label>Form. Farm. Concentr./Unid. Posologia<textarea rows={2} value={props.values.a_form_posology} onChange={(e) => props.onValueChange("a_form_posology", e.target.value)} /></label>
-        </section>
+        <>
+          <section className="panel-box form-card">
+            <div className="section-heading">
+              <span className="step-number">02</span>
+              <div>
+                <p className="section-kicker">Identificacao</p>
+                <h3>Paciente</h3>
+              </div>
+            </div>
+            <div className="field-grid">
+              <label className="compact-field">Data<input placeholder="dd/MM/aaaa" value={props.values.a_date} onChange={(e) => props.onValueChange("a_date", e.target.value)} /></label>
+              <label>Paciente<textarea rows={2} value={props.values.a_patient} onChange={(e) => props.onValueChange("a_patient", e.target.value)} /></label>
+              <label>Endereco<textarea rows={2} value={props.values.a_address} onChange={(e) => props.onValueChange("a_address", e.target.value)} /></label>
+            </div>
+            <div className={props.addressInfo.status === "fits" ? "fit-status fits" : "fit-status overflow"}>
+              <span>{props.addressInfo.status === "fits" ? "Endereco ajustado" : "Endereco excedeu o espaco"}</span>
+              <strong>{props.addressInfo.finalText || "Aguardando endereco"}</strong>
+            </div>
+            <details className="inline-details">
+              <summary>Ajustes opcionais do endereco</summary>
+              <label>
+                Texto final personalizado
+                <textarea rows={2} value={props.values.a_address_override} onChange={(e) => props.onValueChange("a_address_override", e.target.value)} />
+              </label>
+              <label className="checkbox">
+                <input type="checkbox" checked={props.values.a_use_city_abbrev} onChange={(e) => props.onValueChange("a_use_city_abbrev", e.target.checked)} />
+                Permitir abreviacoes de cidade/estado
+              </label>
+            </details>
+          </section>
+
+          <section className="panel-box form-card">
+            <div className="section-heading">
+              <span className="step-number">03</span>
+              <div>
+                <p className="section-kicker">Prescricao</p>
+                <h3>Medicamento e posologia</h3>
+              </div>
+            </div>
+            <p className="field-hint">Pressione Enter quando quiser dividir o texto em duas linhas.</p>
+            <label>Medicamento<textarea rows={2} value={props.values.a_drug_name} onChange={(e) => props.onValueChange("a_drug_name", e.target.value)} /></label>
+            <label>Quantidade e apresentacao<textarea rows={2} value={props.values.a_qty} onChange={(e) => props.onValueChange("a_qty", e.target.value)} /></label>
+            <label>Forma, concentracao e posologia<textarea rows={2} value={props.values.a_form_posology} onChange={(e) => props.onValueChange("a_form_posology", e.target.value)} /></label>
+          </section>
+        </>
       ) : (
-        <section className="panel-box">
-          <h3>Campos da Receita B</h3>
-          <p className="print-warning">Use Enter nos campos de texto para imprimir em duas linhas.</p>
-          <label>Data base<input value={props.values.b_date} onChange={(e) => props.onValueChange("b_date", e.target.value)} /></label>
-          <label>Paciente<textarea rows={2} value={props.values.b_patient} onChange={(e) => props.onValueChange("b_patient", e.target.value)} /></label>
-          <label>Endereco<textarea rows={2} value={props.values.b_address} onChange={(e) => props.onValueChange("b_address", e.target.value)} /></label>
-          <label>
-            Override do endereco final (opcional)
-            <textarea rows={2} value={props.values.b_address_override} onChange={(e) => props.onValueChange("b_address_override", e.target.value)} />
-          </label>
-          <label className="checkbox">
-            <input type="checkbox" checked={props.values.b_use_city_abbrev} onChange={(e) => props.onValueChange("b_use_city_abbrev", e.target.checked)} />
-            Permitir abreviacoes de cidade/estado
-          </label>
-          <p className={props.addressInfo.status === "fits" ? "ok-msg" : "warn-msg"}>
-            Endereco: {props.addressInfo.status}. Texto final: {props.addressInfo.finalText || "(vazio)"}
-          </p>
-          <label>Medicamento ou Substancia<textarea rows={2} value={props.values.b_drug} onChange={(e) => props.onValueChange("b_drug", e.target.value)} /></label>
-          <label>Quantidade e Forma Farmaceutica<textarea rows={2} value={props.values.b_qty_form} onChange={(e) => props.onValueChange("b_qty_form", e.target.value)} /></label>
-          <label>Dose por Unidade Posologica<textarea rows={2} value={props.values.b_dose_unit} onChange={(e) => props.onValueChange("b_dose_unit", e.target.value)} /></label>
-          <label>Posologia<textarea rows={2} value={props.values.b_posology} onChange={(e) => props.onValueChange("b_posology", e.target.value)} /></label>
-        </section>
+        <>
+          <section className="panel-box form-card">
+            <div className="section-heading">
+              <span className="step-number">02</span>
+              <div>
+                <p className="section-kicker">Identificacao</p>
+                <h3>Paciente</h3>
+              </div>
+            </div>
+            <div className="field-grid">
+              <label className="compact-field">Data<input placeholder="dd/MM/aaaa" value={props.values.b_date} onChange={(e) => props.onValueChange("b_date", e.target.value)} /></label>
+              <label>Paciente<textarea rows={2} value={props.values.b_patient} onChange={(e) => props.onValueChange("b_patient", e.target.value)} /></label>
+              <label>Endereco<textarea rows={2} value={props.values.b_address} onChange={(e) => props.onValueChange("b_address", e.target.value)} /></label>
+            </div>
+            <div className={props.addressInfo.status === "fits" ? "fit-status fits" : "fit-status overflow"}>
+              <span>{props.addressInfo.status === "fits" ? "Endereco ajustado" : "Endereco excedeu o espaco"}</span>
+              <strong>{props.addressInfo.finalText || "Aguardando endereco"}</strong>
+            </div>
+            <details className="inline-details">
+              <summary>Ajustes opcionais do endereco</summary>
+              <label>
+                Texto final personalizado
+                <textarea rows={2} value={props.values.b_address_override} onChange={(e) => props.onValueChange("b_address_override", e.target.value)} />
+              </label>
+              <label className="checkbox">
+                <input type="checkbox" checked={props.values.b_use_city_abbrev} onChange={(e) => props.onValueChange("b_use_city_abbrev", e.target.checked)} />
+                Permitir abreviacoes de cidade/estado
+              </label>
+            </details>
+          </section>
+
+          <section className="panel-box form-card">
+            <div className="section-heading">
+              <span className="step-number">03</span>
+              <div>
+                <p className="section-kicker">Prescricao</p>
+                <h3>Medicamento e posologia</h3>
+              </div>
+            </div>
+            <p className="field-hint">Pressione Enter quando quiser dividir o texto em duas linhas.</p>
+            <label>Medicamento ou substancia<textarea rows={2} value={props.values.b_drug} onChange={(e) => props.onValueChange("b_drug", e.target.value)} /></label>
+            <label>Quantidade e forma farmaceutica<textarea rows={2} value={props.values.b_qty_form} onChange={(e) => props.onValueChange("b_qty_form", e.target.value)} /></label>
+            <label>Dose por unidade posologica<textarea rows={2} value={props.values.b_dose_unit} onChange={(e) => props.onValueChange("b_dose_unit", e.target.value)} /></label>
+            <label>Posologia<textarea rows={2} value={props.values.b_posology} onChange={(e) => props.onValueChange("b_posology", e.target.value)} /></label>
+          </section>
+        </>
       )}
 
-      <section className="panel-box">
-        <button type="button" onClick={() => setShowAdvanced((prev) => !prev)}>
-          {showAdvanced ? "Ocultar avancado" : "Avancado"}
-        </button>
-      </section>
+      <PrintButton
+        recipeType={props.recipeType}
+        fields={props.printFields}
+        printMode={props.printMode}
+        a4Calibration={props.a4Calibration}
+      />
+
+      <button type="button" className="advanced-trigger" onClick={() => setShowAdvanced((prev) => !prev)}>
+        <span>
+          <strong>Ajustes avancados</strong>
+          <small>Calibracao, coordenadas e seguranca</small>
+        </span>
+        <span className="advanced-symbol" aria-hidden="true">{showAdvanced ? "−" : "+"}</span>
+      </button>
 
       {showAdvanced && (
-        <>
-          <section className="panel-box">
+        <div className="advanced-stack">
+          <section className="panel-box advanced-card">
             <h3>Configuracoes</h3>
             <button type="button" onClick={props.onSaveSettings}>Salvar configuracoes</button>
             {props.lastSavedAt ? <p className="ok-msg">Salvo.</p> : null}
           </section>
 
-          <section className="panel-box">
+          <section className="panel-box advanced-card">
             <h3>Template (imagem de fundo)</h3>
             <p className="print-warning">Dica: no preview, segure ALT e arraste para mover o fundo.</p>
             <div className="nudge-pad">
@@ -180,7 +260,7 @@ export default function FormPanel(props: Props) {
             <button type="button" onClick={props.onResetTemplateOffset}>Resetar template</button>
           </section>
 
-          <section className="panel-box">
+          <section className="panel-box advanced-card">
             <h3>Impressao</h3>
             <label>
               Modo de impressao
@@ -210,7 +290,7 @@ export default function FormPanel(props: Props) {
             )}
           </section>
 
-          <section className="panel-box">
+          <section className="panel-box advanced-card">
             <h3>Coordenadas Ao Vivo (mm)</h3>
             <p className="print-warning">Arraste os campos no preview. Estes valores atualizam em tempo real.</p>
             <div className="coords-list">
@@ -223,19 +303,16 @@ export default function FormPanel(props: Props) {
             </div>
             <button type="button" onClick={props.onResetCalibration}>Resetar calibracao</button>
           </section>
-        </>
+
+          <section className="danger-zone">
+            <div>
+              <strong>Limpar dados locais</strong>
+              <p>Remove campos preenchidos e calibracoes salvas neste navegador.</p>
+            </div>
+            <button type="button" className="danger-btn" onClick={props.onClearAll}>Limpar tudo</button>
+          </section>
+        </div>
       )}
-
-      <PrintButton
-        recipeType={props.recipeType}
-        fields={props.printFields}
-        printMode={props.printMode}
-        a4Calibration={props.a4Calibration}
-      />
-
-      <section className="panel-box">
-        <button type="button" className="danger-btn" onClick={props.onClearAll}>Clear all data</button>
-      </section>
     </div>
   );
 }
